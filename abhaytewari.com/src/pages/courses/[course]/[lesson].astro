@@ -1,0 +1,20 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+export async function getStaticPaths() {
+  const lessons = await getCollection('lessons');
+  const courses = await getCollection('courses');
+  return lessons.map(l => {
+    const siblings = lessons.filter(x => x.data.course === l.data.course).sort((a, b) => a.data.order - b.data.order);
+    const idx = siblings.findIndex(x => x.id === l.id);
+    return { params: { course: l.data.course, lesson: l.id }, props: { lesson: l, course: courses.find(c => c.id === l.data.course), prev: siblings[idx - 1], next: siblings[idx + 1], n: idx + 1, total: siblings.length } };
+  });
+}
+const { lesson, course, prev, next, n, total } = Astro.props;
+const { Content } = await render(lesson);
+---
+<Base title={lesson.data.title} description={lesson.data.description ?? course?.data.description}>
+  <header class="article-head"><div class="eyebrow"><a href={`/courses/${course?.id}/`}>{course?.data.title}</a> · Lesson {n} of {total}</div><h1>{lesson.data.title}</h1></header>
+  <article class="prose"><Content /></article>
+  <nav class="lesson-nav">{prev ? <a href={`/courses/${course?.id}/${prev.id}/`}>← {prev.data.title}</a> : <span />}{next ? <a href={`/courses/${course?.id}/${next.id}/`}>{next.data.title} →</a> : <a href={`/courses/${course?.id}/`}>Back to course</a>}</nav>
+</Base>

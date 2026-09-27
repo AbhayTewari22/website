@@ -1,0 +1,10 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+const items = (await getCollection('stories', p => !p.data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+---
+<Base title="Stories" description="Short fiction and personal essays by Abhay Tewari.">
+  <div class="article-head"><div class="eyebrow">Stories &amp; essays</div><h1>The other kind of writing</h1><p class="lede">Fiction, essays and the occasional poem. Nothing here is about work, except when it is.</p></div>
+  <div class="list">{items.map(s => <article class="list-item"><time datetime={s.data.date.toISOString()}>{fmt(s.data.date)}</time><div><h3><a href={`/stories/${s.id}/`}>{s.data.title}</a></h3><p>{s.data.description}</p><div class="meta" style="margin-top:6px"><span class="pill">{s.data.kind}</span></div></div></article>)}</div>
+</Base>

@@ -1,0 +1,171 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Cycle Compass" description="Score lead, coincident and lag indicators for India and the US, read the business-cycle phase, and see the sector and NSE ETF tilts the rulebook prescribes.">
+  <style is:global>
+    .cc { display: grid; gap: 24px; }
+    .cc-head { padding-block: 40px 8px; max-width: 70ch; }
+    .cc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .cc-grid { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); min-width: 0; }
+    .panel h2 { font-size: 1.3rem; margin-bottom: 4px; display: flex; align-items: baseline; gap: 10px; }
+    .panel h2 small { font-family: var(--font-body); font-size: .8rem; color: var(--ink-3); font-weight: 400; }
+    .sig { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+    @media (max-width: 560px) { .sig { grid-template-columns: 1fr; } }
+    .sig .name { font-size: .92rem; font-weight: 600; }
+    .sig .name small { display: block; font-weight: 400; color: var(--ink-3); font-size: .75rem; }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .opts label { font-size: .75rem; line-height: 1.25; border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; cursor: pointer; background: var(--bg-2); color: var(--ink-2); text-align: center; }
+    .opts input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .opts label:has(input:checked) { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .opts label:has(input:focus-visible) { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+    .reading { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+    .phase { border-radius: 8px; padding: 12px 14px; background: var(--bg-2); border-left: 4px solid var(--line); }
+    .phase.win { border-left-color: var(--accent); background: var(--accent-soft); }
+    .phase .v { font-family: var(--font-display); font-size: 1.35rem; }
+    .phase .s { font-size: .8rem; color: var(--ink-3); }
+    .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 6px; }
+    .bar i { display: block; height: 100%; background: var(--accent); }
+    .verdict { font-family: var(--font-display); font-size: 1.5rem; margin: 12px 0 4px; }
+    .conf { font-size: .9rem; color: var(--ink-2); }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .cols { grid-template-columns: 1fr; } }
+    .cols h3 { font-size: 1rem; margin: 0 0 6px; }
+    .cols ul { margin: 0; padding-left: 1.1em; font-size: .95rem; color: var(--ink-2); }
+    .etf { display: grid; gap: 6px; font-size: .9rem; }
+    .etf div { display: grid; grid-template-columns: 130px 1fr; gap: 10px; }
+    .etf b { color: var(--ink); }
+    .etf span { font-family: var(--font-mono); font-size: .8rem; color: var(--ink-2); }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .toolbar button { font: inherit; font-size: .9rem; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+    .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+    .overlay { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .overlay label { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; color: var(--ink-2); }
+    .flag { border-radius: 6px; padding: 8px 12px; font-size: .9rem; margin-top: 8px; }
+    .flag.warn { background: color-mix(in srgb, var(--mark) 15%, transparent); color: var(--mark); }
+    .flag.ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+    .tranche { font-size: .95rem; color: var(--ink-2); }
+    .tranche li { margin-bottom: 6px; }
+  </style>
+
+  <div class="cc">
+    <header class="cc-head">
+      <div class="eyebrow">Tool · Business-cycle investing</div>
+      <h1>Cycle Compass</h1>
+      <p class="lede" style="color:var(--ink-2)">Take the temperature of the cycle the way the rulebook says to: form the hypothesis with leading indicators, confirm with coincident ones, use lags only as a cross-check. Score each signal for India and the US, and the compass returns the phase, a confidence level, and the sector and ETF tilts for it.</p>
+      <div class="toolbar"><button id="presetAug26">Load the August 2026 read</button><button id="clearAll">Clear</button><button id="copyLink">Copy my reading</button></div>
+    </header>
+
+    <div class="cc-grid">
+      <section class="panel" id="panel-in"></section>
+      <section class="panel" id="panel-us"></section>
+    </div>
+
+    <section class="panel">
+      <h2>Risk overlay <small>external factors that can override an Indian mid-cycle reading</small></h2>
+      <div class="overlay">
+        <label><input type="checkbox" id="ov_crude"> Brent above $85 for a month or more (imports late-cycle inflation into India)</label>
+        <label><input type="checkbox" id="ov_pmi"> India composite PMI below 52 for two consecutive months</label>
+        <label><input type="checkbox" id="ov_claims"> US initial claims trending 20% above their low, or ISM below 48</label>
+        <label><input type="checkbox" id="ov_fpi"> FPI net selling for three consecutive months with a weakening rupee</label>
+        <label><input type="checkbox" id="ov_draw5"> Nifty down 5% from its recent high (accelerate rule: pull the next tranche forward)</label>
+        <label><input type="checkbox" id="ov_draw10"> Nifty down 10% from its recent high (pull two tranches forward)</label>
+      </div>
+      <div id="overlayOut"></div>
+    </section>
+
+    <section class="panel" id="prescription"></section>
+
+    <section class="panel">
+      <h2>How the phase is scored</h2>
+      <p style="font-size:.95rem;color:var(--ink-2)">Each signal is matched to the phase whose description fits best. Leading signals (composite leading index, PMI, credit growth, yield curve, market valuations and psychology) carry weight 2, 2, 1.5, 1.5 and 1; policy, earnings and inflation carry 1 each, and inflation is a lag, so it never decides a phase on its own. The phase with the highest weighted score is declared; confidence is the margin between the top two phases as a share of the total, mapped to Low (under 15%), Medium (15–35%) and High (over 35%). A Low reading is labelled Mixed and the compass recommends the barbell, not a directional tilt. India's thresholds are calibrated to its high trend growth: a "contraction" is a growth recession, not negative GDP.</p>
+      <p class="notice">Analytical framework for study, not investment advice. The author is not a SEBI-registered investment adviser. Phase patterns may not repeat; validate with your own judgement or a registered adviser.</p>
+    </section>
+  </div>
+
+  <script is:inline>
+  const PHASES = ['Early recovery', 'Mid expansion', 'Late cycle', 'Contraction'];
+  const SIGNALS = [
+    { id: 'lei', name: 'Leading index (6-month trend)', sub: 'US: Conference Board LEI · India: OECD CLI', w: 2, lead: true, opts: ['Turning up from trough', 'Rising steadily', 'Flattening, rolling over', 'Falling persistently'] },
+    { id: 'pmi', name: 'Composite PMI', sub: 'India rarely prints below 50; read direction and breadth', w: 2, lead: true, opts: ['Crossing up (India ~53, US ~50)', 'Solidly high (India 55–62, US 52–58)', 'Decelerating from highs, still > 50', 'Below 50 (India < 52 with breadth loss)'] },
+    { id: 'credit', name: 'Credit growth', sub: 'Non-food bank credit · C&I loans · bond issuance', w: 1.5, lead: true, opts: ['Bottoming, starting to accelerate', 'Strong and broad-based', 'Very strong but funding costs rising', 'Decelerating or contracting'] },
+    { id: 'curve', name: 'Yield curve', sub: '10Y minus policy rate / 3-month', w: 1.5, lead: true, opts: ['Steep', 'Normal, gently flattening', 'Flat or inverted', 'Bull-steepening on rate cuts'] },
+    { id: 'val', name: 'Valuations & psychology', sub: 'Marks: where is the pendulum?', w: 1, lead: true, opts: ['Cheap; disbelief', 'Fair; confidence', 'Expensive; euphoria / FOMO', 'Cheap and getting cheaper; fear'] },
+    { id: 'policy', name: 'Policy stance', sub: 'RBI / Fed', w: 1, opts: ['Aggressively easy', 'Moving to neutral', 'Tightening or restrictive hold', 'Pivot to easing'] },
+    { id: 'earn', name: 'Earnings revisions', sub: 'Breadth of upgrades', w: 1, opts: ['Downgrades ending', 'Broad upgrades', 'Margins peak; upgrades narrow', 'Downgrades cascade'] },
+    { id: 'infl', name: 'Inflation (lag)', sub: 'CPI, services CPI · never a trigger', w: 1, lag: true, opts: ['Low or falling', 'Moderate, stable', 'Rising, above target', 'Peaking then falling'] },
+  ];
+  const SECTORS = {
+    0: { over: ['Banks & NBFCs', 'Autos', 'Real estate', 'Consumer discretionary', 'Industrials', 'Small & midcaps', 'Metals'], under: ['FMCG, pharma, utilities (they lag)', 'Cash'], why: 'Rate-sensitives and operating leverage recover first; credit costs fall; beta pays.' },
+    1: { over: ['Capital goods & infrastructure', 'Banks (credit growth)', 'IT & global cyclicals', 'Manufacturing', 'Power / energy capex', 'Selective mid-caps'], under: ['Deep defensives', 'Long-duration bonds'], why: 'Capex cycle broadens; earnings breadth widest; corrections shallow.' },
+    2: { over: ['Energy & commodities', 'FMCG & consumer staples', 'Pharma & healthcare', 'Utilities', 'Gold', 'Low-volatility / quality factor', 'Large over small'], under: ['Small & midcaps', 'High-beta cyclicals', 'Richly valued growth', 'Leveraged financials'], why: 'Inflation hedges work while defensives pre-position for the turn; valuation risk is highest in what led the rally.' },
+    3: { over: ['FMCG', 'Pharma / healthcare', 'Gold', 'Liquid funds & short gilts', 'Quality / low-vol', 'Near the trough: begin accumulating early-recovery cyclicals'], under: ['Everything high-beta until leads trough', 'Falling small-caps'], why: 'Capital preservation, then the courage to redeploy while headlines are still terrible.' },
+  };
+  const ETFS = {
+    core: [['Broad market', 'NIFTYBEES · JUNIORBEES'], ['Gold', 'GOLDBEES · SGB'], ['Cash', 'LIQUIDBEES · arbitrage funds']],
+    0: [['Banks', 'BANKBEES · PSUBNKBEES · private bank ETF'], ['Financial services', 'FINIETF'], ['Autos', 'AUTOBEES · AUTOIETF'], ['Small & mid', 'MIDSMALL · SMALLCAP · momentum'], ['Realty / metals', 'MOREALTY · METALIETF']],
+    1: [['Infra & capex', 'INFRAIETF · MAKEINDIA · CPSEETF'], ['IT & global cyclicals', 'ITBEES · KOTAKIT · MON100 · MAHKTECH'], ['Power & energy capex', 'POWERIETF · GROWWPOWER'], ['Banks', 'stay overweight'], ['Mid & small', 'hold, stop adding as valuations stretch']],
+    2: [['Energy & commodities', 'OILIETF · COMMOIETF · SILVERBEES'], ['Staples & health', 'FMCGIETF · CONSUMBEES · PHARMABEES · HEALTHIETF'], ['Factor rotation', 'LOWVOLIETF · QUAL30IETF · NV20IETF replace momentum'], ['Gold up-weight', 'GOLDBEES · SGB']],
+    3: [['Capital preservation', 'LIQUIDBEES · GILT5YBEES · LTGILTBEES · Bharat Bond'], ['Defensive equity', 'FMCG · pharma · gold · low-vol'], ['Trough accumulation list', 'bank, auto, midcap ETFs — bought while leads trough']],
+  };
+  const AUG26 = { in: { lei: 1, pmi: 2, credit: 1, curve: 0, val: 1, policy: 1, earn: 1, infl: 2 }, us: { lei: 0, pmi: 1, credit: 2, curve: 1, val: 2, policy: 3, earn: 2, infl: 2 }, ov: { ov_crude: false, ov_pmi: false, ov_claims: false, ov_fpi: false, ov_draw5: false, ov_draw10: false } };
+  const $ = id => document.getElementById(id);
+
+  function renderPanel(id, title, sub) {
+    $(id).innerHTML = `<h2>${title} <small>${sub}</small></h2>` + SIGNALS.map(s => `<div class="sig"><div class="name">${s.name}<small>${s.sub}${s.lead ? ' · lead' : s.lag ? ' · lag' : ''} · weight ${s.w}</small></div><div class="opts" role="radiogroup" aria-label="${s.name} ${title}">${s.opts.map((o, k) => `<label><input type="radio" name="${id}_${s.id}" value="${k}">${o}</label>`).join('')}</div></div>`).join('') + `<div class="reading" id="${id}_reading"></div>`;
+  }
+  function score(id) {
+    const sc = [0, 0, 0, 0]; let tot = 0, n = 0;
+    for (const s of SIGNALS) { const v = document.querySelector(`input[name="${id}_${s.id}"]:checked`); if (v) { sc[+v.value] += s.w; tot += s.w; n++; } }
+    if (!n) return null;
+    const order = [...sc.keys()].sort((a, b) => sc[b] - sc[a]);
+    const margin = (sc[order[0]] - sc[order[1]]) / tot;
+    const conf = margin < 0.15 ? 'Low' : margin < 0.35 ? 'Medium' : 'High';
+    return { sc, tot, n, top: order[0], second: order[1], margin, conf, mult: conf === 'High' ? 1 : conf === 'Medium' ? 0.6 : 0.3 };
+  }
+  function renderReading(id, r) {
+    const el = $(`${id}_reading`);
+    if (!r) { el.innerHTML = '<p style="color:var(--ink-3);font-size:.9rem">Score at least one signal to get a reading.</p>'; return; }
+    el.innerHTML = PHASES.map((p, k) => `<div class="phase ${k === r.top && r.conf !== 'Low' ? 'win' : ''}"><div class="s">${p}</div><div class="v">${(100 * r.sc[k] / r.tot).toFixed(0)}%</div><div class="bar"><i style="width:${100 * r.sc[k] / r.tot}%"></i></div></div>`).join('') +
+      `<div style="grid-column:1/-1"><div class="verdict">${r.conf === 'Low' ? 'Mixed — leaning ' + PHASES[r.top].toLowerCase() : PHASES[r.top]}</div><div class="conf">Confidence ${r.conf} (margin ${(100 * r.margin).toFixed(0)}% over ${PHASES[r.second].toLowerCase()}, ${r.n} of 8 signals scored). Tilt multiplier ${r.mult}×.</div></div>`;
+  }
+  function renderPrescription(rin, rus) {
+    const el = $('prescription');
+    if (!rin) { el.innerHTML = '<h2>Prescription</h2><p style="color:var(--ink-3)">Score the India panel to see sector tilts and the ETF menu.</p>'; return; }
+    const p = rin.top, S = SECTORS[p];
+    const usNote = rus ? (rus.top >= 2 && p <= 1 ? `<div class="flag warn">US reads <b>${PHASES[rus.top].toLowerCase()}</b> while India reads ${PHASES[p].toLowerCase()}: US late-cycle stress reaches Indian equities through flows and oil long before it reaches Indian GDP. Run a barbell: domestic cyclical core (banks first) balanced by a real defensive sleeve (pharma, FMCG, gold) and quality / low-vol instead of momentum for incremental mid- and small-cap exposure. Keep IT and US-tech ETFs for easing optionality.</div>` : `<div class="flag ok">US reads ${PHASES[rus.top].toLowerCase()}; no adverse overlay from the US cycle on the Indian reading.</div>`) : '';
+    const mixed = rin.conf === 'Low' ? `<div class="flag warn">Low confidence: the evidence is mixed. Scale every tilt by ${rin.mult}× and lean on the core (broad-market index + gold + cash) rather than a directional sector bet.</div>` : '';
+    el.innerHTML = `<h2>Prescription for India · ${PHASES[p]} <small>tilts scaled ${rin.mult}× by confidence</small></h2>${mixed}${usNote}
+      <p style="font-size:.95rem;color:var(--ink-2);margin:10px 0">${S.why} Own what benefits from the <em>next</em> 6–12 months of the cycle, not the last 6. Macro is a lean, never a veto.</p>
+      <div class="cols"><div><h3>Overweight (in order)</h3><ul>${S.over.map(x => `<li>${x}</li>`).join('')}</ul></div><div><h3>Underweight / avoid</h3><ul>${S.under.map(x => `<li>${x}</li>`).join('')}</ul></div></div>
+      <h3 style="margin-top:16px;font-size:1rem">NSE ETF menu</h3>
+      <div class="etf">${ETFS.core.map(x => `<div><b>Core · ${x[0]}</b><span>${x[1]}</span></div>`).join('')}${ETFS[p].map(x => `<div><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div>
+      <p style="font-size:.8rem;color:var(--ink-3);margin-top:8px">Tickers are representative; equivalents from other AMCs are interchangeable. Choose on expense ratio, AUM and tracking error, and check bid-ask spread before sizing.</p>
+      <h3 style="margin-top:16px;font-size:1rem">Deployment discipline</h3>
+      <ol class="tranche"><li><b>Tranche in stages</b>, weekly or fortnightly, from cash or arbitrage funds into the core index first, then the phase overweights.</li><li><b>Conditional tranche</b>: proceed only while the dashboard holds (composite PMI stable, crude contained, CPI not breaching target band, FPI flows neutral or better).</li><li><b>Event tranche</b>: keep 10–12% for a genuine dislocation (deploy while it feels terrible) or a genuine resolution (upgrade the phase outright). Unused, it earns the cash yield; that is optionality, not failure.</li></ol>`;
+  }
+  function renderOverlay() {
+    const f = [];
+    if ($('ov_crude').checked) f.push(['warn', 'Crude overlay: treat the Indian reading as one notch later in the cycle; add to energy and gold, trim rate-sensitives.']);
+    if ($('ov_pmi').checked) f.push(['warn', 'Decelerate rule triggered (India PMI < 52 for two months): pause tranches and let the defensive sleeve work.']);
+    if ($('ov_claims').checked) f.push(['warn', 'Decelerate rule triggered (US claims / ISM): pause tranches; US flows and oil are the transmission channels.']);
+    if ($('ov_fpi').checked) f.push(['warn', 'External flow stress: favour domestically funded, under-owned sectors (banks) over FPI-crowded names.']);
+    if ($('ov_draw10').checked) f.push(['ok', 'Accelerate rule: a 10% drawdown pulls two tranches forward.']);
+    else if ($('ov_draw5').checked) f.push(['ok', 'Accelerate rule: a 5% drawdown pulls the next tranche forward.']);
+    $('overlayOut').innerHTML = f.length ? f.map(x => `<div class="flag ${x[0]}">${x[1]}</div>`).join('') : '<div class="flag ok" style="margin-top:8px">No overlay flags set.</div>';
+  }
+  function update() { const rin = score('panel-in'), rus = score('panel-us'); renderReading('panel-in', rin); renderReading('panel-us', rus); renderPrescription(rin, rus); renderOverlay(); save(); }
+  function setAll(state) { for (const [pid, key] of [['panel-in', 'in'], ['panel-us', 'us']]) for (const s of SIGNALS) { const v = state[key] && state[key][s.id]; document.querySelectorAll(`input[name="${pid}_${s.id}"]`).forEach(i => i.checked = v != null && +i.value === v); } for (const k in state.ov || {}) if ($(k)) $(k).checked = !!state.ov[k]; update(); }
+  function getState() { const st = { in: {}, us: {}, ov: {} }; for (const [pid, key] of [['panel-in', 'in'], ['panel-us', 'us']]) for (const s of SIGNALS) { const v = document.querySelector(`input[name="${pid}_${s.id}"]:checked`); if (v) st[key][s.id] = +v.value; } ['ov_crude', 'ov_pmi', 'ov_claims', 'ov_fpi', 'ov_draw5', 'ov_draw10'].forEach(k => st.ov[k] = $(k).checked); return st; }
+  function save() { try { localStorage.setItem('cycle-compass', JSON.stringify(getState())); } catch (e) {} }
+
+  renderPanel('panel-in', 'India', 'no official LEI: assemble it from PMI, OECD CLI, credit, capex, autos, GST');
+  renderPanel('panel-us', 'United States', 'Conference Board LEI / CEI / LAG, ISM, claims, curve');
+  document.querySelectorAll('.cc input').forEach(i => i.addEventListener('change', update));
+  $('presetAug26').onclick = () => setAll(AUG26);
+  $('clearAll').onclick = () => setAll({ in: {}, us: {}, ov: {} });
+  $('copyLink').onclick = () => { const st = getState(); const rin = score('panel-in'), rus = score('panel-us'); const txt = `Cycle Compass reading (${new Date().toISOString().slice(0, 10)})\nIndia: ${rin ? PHASES[rin.top] + ' · confidence ' + rin.conf : 'not scored'}\nUS: ${rus ? PHASES[rus.top] + ' · confidence ' + rus.conf : 'not scored'}\n` + JSON.stringify(st); navigator.clipboard && navigator.clipboard.writeText(txt).then(() => { $('copyLink').textContent = 'Copied'; setTimeout(() => $('copyLink').textContent = 'Copy my reading', 1500); }).catch(() => {}); };
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('cycle-compass') || 'null'); } catch (e) {}
+  setAll(saved && (Object.keys(saved.in).length || Object.keys(saved.us).length) ? saved : AUG26);
+  </script>
+</Base>

@@ -1,0 +1,9 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+const courses = await getCollection('courses');
+---
+<Base title="Courses" description="Courses by Abhay Tewari on catastrophe pricing with generative AI, business-cycle investing, and actuarial practice under risk-based capital.">
+  <div class="article-head"><div class="eyebrow">Courses</div><h1>Learn the craft, with the tools in hand</h1><p class="lede">Practitioner courses built around working code and real data. Each course pairs a set of lessons with one of the tools on this site so that you can test what you learn.</p></div>
+  <div class="grid">{courses.map(c => <article class="card"><div class="meta"><span class={`pill ${c.data.status === 'open' ? 'open' : 'soon'}`}>{c.data.status === 'open' ? 'Enrolling' : 'Coming soon'}</span><span>{c.data.level} · {c.data.duration}</span></div><h3><a href={`/courses/${c.id}/`}>{c.data.title}</a></h3><p>{c.data.description}</p><p style="font-size:.9rem;color:var(--ink-3)">For: {c.data.audience}</p></article>)}</div>
+</Base>
