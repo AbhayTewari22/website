@@ -1,0 +1,27 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+export async function getStaticPaths() {
+  const courses = await getCollection('courses');
+  return courses.map(c => ({ params: { course: c.id }, props: { course: c } }));
+}
+const { course } = Astro.props;
+const { Content } = await render(course);
+const lessons = (await getCollection('lessons', l => l.data.course === course.id)).sort((a, b) => a.data.order - b.data.order);
+const lessonHref = (title: string) => { const l = lessons.find(x => x.data.title === title); return l ? `/courses/${course.id}/${l.id}/` : null; };
+---
+<Base title={course.data.title} description={course.data.description}>
+  <div class="two-col">
+    <div>
+      <header class="article-head"><div class="eyebrow">Course · {course.data.level}</div><h1>{course.data.title}</h1><p class="lede" style="color:var(--ink-2)">{course.data.description}</p></header>
+      <article class="prose"><Content /></article>
+      <h2 style="margin-top:2em">Syllabus</h2>
+      <div class="syllabus">{course.data.modules.map((m, i) => <div class="module"><h3>Module {i + 1} · {m.title}</h3><ol>{m.lessons.map(t => { const h = lessonHref(t); return <li>{h ? <a href={h}>{t}</a> : t}</li>; })}</ol></div>)}</div>
+    </div>
+    <aside class="aside">
+      <dl><dt>Level</dt><dd>{course.data.level}</dd><dt>Duration</dt><dd>{course.data.duration}</dd><dt>Format</dt><dd>Self-paced lessons + live Q&amp;A</dd><dt>Status</dt><dd><span class={`pill ${course.data.status === 'open' ? 'open' : 'soon'}`}>{course.data.status === 'open' ? 'Enrolling' : 'Coming soon'}</span></dd>{course.data.price && <><dt>Fee</dt><dd>{course.data.price}</dd></>}</dl>
+      {course.data.enrolUrl ? <a class="btn" href={course.data.enrolUrl}>Enrol / register interest</a> : <a class="btn" href="/about/#contact">Register interest</a>}
+      {lessons.length > 0 && <p style="margin-top:14px"><a href={`/courses/${course.id}/${lessons[0].id}/`}>Start with lesson 1 →</a></p>}
+    </aside>
+  </div>
+</Base>

@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+const posts = (await getCollection('blog', p => !p.data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const tags = [...new Set(posts.flatMap(p => p.data.tags))].sort();
+const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+---
+<Base title="Articles" description="Articles on insurance, reinsurance, catastrophe modelling, investing and applied AI by Abhay Tewari.">
+  <div class="article-head"><div class="eyebrow">Articles</div><h1>Writing on risk, capital and machines</h1><p class="lede">Long-form pieces, working notes and explainers. Subscribe by <a href="/rss.xml">RSS</a>.</p>
+  <div class="tags">{tags.map(t => <span class="tag">{t}</span>)}</div></div>
+  <div class="list">{posts.map(p => <article class="list-item"><time datetime={p.data.date.toISOString()}>{fmt(p.data.date)}</time><div><h3><a href={`/blog/${p.id}/`}>{p.data.title}</a></h3><p>{p.data.description}</p></div></article>)}</div>
+</Base>
