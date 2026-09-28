@@ -1,0 +1,15 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ZenojasNav from '../../../components/ZenojasNav.astro';
+import { Content } from '../../../data/zenojas-how-it-works.md';
+---
+<Base title="How the ZENOJAS Model Works" description="A plain-language explanation of how the ZENOJAS stock-selection model picks shares, how it was tested, and how to read the numbers on this site.">
+  <div class="article-head">
+    <div class="eyebrow">Tool · ZENOJAS · Plain-language guide</div>
+    <h1>How the ZENOJAS model works</h1>
+    <p class="lede">What the model does, how we checked whether it works, and what the numbers on the Backtest Explorer mean — written for readers who are not statisticians or programmers.</p>
+    <ZenojasNav current="how" />
+  </div>
+  <article class="prose"><Content /></article>
+  <p class="notice">Research output, not investment advice. The author is not a SEBI-registered investment adviser.</p>
+</Base>

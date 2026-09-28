@@ -1,0 +1,19 @@
+---
+interface Props { current: 'model' | 'explorer' | 'how' | 'playbook' }
+const { current } = Astro.props;
+const items: [string, string, string][] = [
+  ['model', '/tools/zenojas/', 'Model outputs'],
+  ['explorer', '/tools/zenojas/explorer/', 'Backtest Explorer'],
+  ['how', '/tools/zenojas/how-it-works/', 'How it works'],
+  ['playbook', '/tools/zenojas/playbook/', 'Playbook'],
+];
+---
+<nav class="zn-subnav" aria-label="ZENOJAS pages">
+  {items.map(([k, href, label]) => <a href={href} aria-current={k === current ? 'page' : undefined}>{label}</a>)}
+</nav>
+<style is:global>
+  .zn-subnav { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }
+  .zn-subnav a { font-size: .85rem; font-weight: 500; text-decoration: none; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-2); background: var(--panel); }
+  .zn-subnav a[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .zn-subnav a:hover { border-color: var(--accent); }
+</style>

@@ -1,0 +1,224 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ZenojasNav from '../../../components/ZenojasNav.astro';
+---
+<Base title="ZENOJAS Backtest Explorer" description="Pick any run of quarters from 2005 to 2025 and see how the ZENOJAS model's top-ranked portfolio compounded against the NIFTY 50, factor indices and the equal-weight universe. In-sample quarters are shaded.">
+  <style is:global>
+    .bx { display: grid; gap: 20px; --strategy: var(--accent); --bench: var(--mark); --universe: var(--ok); --insample: #C98500; --insample-bg: rgba(201,133,0,.12); --good: var(--ok); --bad: #C0392B; }
+    :root[data-theme="dark"] .bx { --bad: #E67373; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bx { --bad: #E67373; } }
+    .bx-head { padding-block: 40px 4px; max-width: 72ch; }
+    .bx .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+    .bx .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+    .bx select, .bx .presets button { font: inherit; font-size: .9rem; color: var(--ink); background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; min-height: 36px; }
+    .bx select:focus-visible, .bx button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .bx .presets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .bx .presets button { font-size: 13px; padding: 6px 12px; cursor: pointer; border-radius: 999px; }
+    .bx .presets button:hover { border-color: var(--accent); color: var(--accent); }
+    .bx .banner { display: none; gap: 10px; align-items: flex-start; border-left: 4px solid var(--insample); background: var(--insample-bg); padding: 10px 12px; border-radius: 0 6px 6px 0; font-size: .95rem; color: var(--ink-2); }
+    .bx .banner.on { display: flex; }
+    .bx .banner b { white-space: nowrap; color: var(--ink); }
+    .bx .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .bx .tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+    .bx .tile.primary { border-color: var(--accent); }
+    .bx .tile .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+    .bx .tile .v { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.15; }
+    .bx .tile .d { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .bx .pos { color: var(--good); } .bx .neg { color: var(--bad); }
+    .bx .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); min-width: 0; }
+    .bx .card h2 { font-size: 1.15rem; margin: 0 0 2px; }
+    .bx .card .cap { font-size: .85rem; color: var(--ink-3); margin: 0 0 10px; }
+    .bx .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; color: var(--ink-2); margin-top: 8px; }
+    .bx .legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: var(--c); }
+    .bx .legend .sw::before { height: 10px; width: 14px; background: var(--insample-bg); border: 1px solid var(--insample); }
+    .bx svg { width: 100%; height: auto; display: block; }
+    .bx svg text { font-family: var(--font-mono); }
+    .bx .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; padding: 6px 8px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -115%); display: none; font-variant-numeric: tabular-nums; z-index: 2; }
+    .bx .chartbox { position: relative; }
+    .bx .tablewrap { overflow-x: auto; }
+    .bx table { border-collapse: collapse; width: 100%; font-size: .85rem; font-variant-numeric: tabular-nums; }
+    .bx th, .bx td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; font-family: var(--font-mono); }
+    .bx th:first-child, .bx td:first-child { text-align: left; }
+    .bx th { color: var(--ink-3); font-weight: 600; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; font-family: var(--font-body); }
+    .bx tr.train td:first-child::after { content: " in-sample"; font-size: 10px; color: var(--insample); font-weight: 600; font-family: var(--font-body); }
+    .bx .notes { font-size: .9rem; color: var(--ink-2); max-width: 78ch; }
+    .bx .notes p { margin: 0 0 6px; }
+  </style>
+
+  <div class="bx">
+    <header class="bx-head">
+      <div class="eyebrow">Tool · ZENOJAS · Backtest Explorer</div>
+      <h1>Backtest Explorer</h1>
+      <p class="lede" style="color:var(--ink-2)">Pick any run of quarters and see how the model's top-ranked portfolio compounded against the market. Quarters the model was trained on are shaded and flagged: returns there are flattered, because the model had already seen those outcomes. Every statistic is computed in your browser from the quarterly returns file.</p>
+      <ZenojasNav current="explorer" />
+      <div class="zn-stamp" id="stamp" style="font-family:var(--font-mono);font-size:.85rem;color:var(--ink-3);margin-top:8px">loading backtest data…</div>
+    </header>
+
+    <div class="controls">
+      <label>Model<select id="model"></select></label>
+      <label>Portfolio<select id="size"><option value="25">Top 25</option><option value="30" selected>Top 30</option><option value="50">Top 50</option></select></label>
+      <label>Benchmark<select id="bench"><option value="nifty50">NIFTY 50</option><option value="universe_ew">Universe equal-weight</option><option value="quality30">NIFTY 200 Quality 30</option><option value="momentum30">NIFTY 200 Momentum 30</option><option value="value30">NIFTY 200 Value 30</option></select></label>
+      <label>From (scoring quarter)<select id="from"></select></label>
+      <label>To (scoring quarter)<select id="to"></select></label>
+      <label>Or: quarters from start<select id="len"><option value="">—</option><option>8</option><option>12</option><option>15</option><option>16</option><option>17</option><option>18</option><option>20</option><option>24</option><option>40</option></select></label>
+    </div>
+    <div class="presets" id="presets"><span class="eyebrow">Presets</span></div>
+
+    <div class="banner" id="banner"><b>In-sample quarters included.</b><span id="bannertext"></span></div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="card chartbox">
+      <h2>Growth of 100</h2>
+      <p class="cap" id="growthcap"></p>
+      <div id="growth"></div>
+      <div class="tip" id="tip1"></div>
+      <div class="legend"><span style="--c:var(--strategy)" id="lg1">Model</span><span style="--c:var(--bench)" id="lg2">Benchmark</span><span style="--c:var(--universe)">Universe equal-weight</span><span class="sw">Training period</span></div>
+    </div>
+
+    <div class="card chartbox">
+      <h2>Quarterly return: model minus benchmark</h2>
+      <p class="cap">Each bar is one holding quarter. Above zero, the model beat the benchmark that quarter.</p>
+      <div id="bars"></div>
+      <div class="tip" id="tip2"></div>
+    </div>
+
+    <div class="card" id="cmpcard" hidden>
+      <h2>Model comparison over this window</h2>
+      <p class="cap" id="cmpcap">Every model in the file, same portfolio size, same benchmark, same quarters. Baselines exist only from Mar-2021, so widen the window into the training period and they drop out.</p>
+      <div class="tablewrap"><table id="cmptable"></table></div>
+    </div>
+
+    <div class="card">
+      <h2>Quarter by quarter</h2>
+      <p class="cap">Scoring date is when the ranking was made; the return is earned over the following quarter after a 60-day entry lag (the 31-Mar row uses 1-Jun to 1-Sep prices).</p>
+      <div class="tablewrap"><table id="table"></table></div>
+    </div>
+
+    <div class="notes" id="notes"></div>
+    <p class="notice">Research output, not investment advice. The author is not a SEBI-registered investment adviser. Backtest returns are before costs, dividends and slippage; past performance does not predict future results.</p>
+  </div>
+
+  <script is:inline>
+  (function(){
+  const $=id=>document.getElementById(id);
+  const fmtP=(x,d=1)=>x==null||isNaN(x)?'–':(x*100).toFixed(d)+'%';
+  const fmtN=(x,d=2)=>x==null||isNaN(x)?'–':x.toFixed(d);
+  const sgn=(x)=>x==null||isNaN(x)?'':(x>=0?'pos':'neg');
+  const BENCH_LABEL={nifty50:'NIFTY 50',universe_ew:'Universe equal-weight',quality30:'NIFTY 200 Quality 30',momentum30:'NIFTY 200 Momentum 30',value30:'NIFTY 200 Value 30',midcap100:'NIFTY Midcap 100'};
+  const shortLabel=q=>{const d=new Date(q.date);return d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})};
+  let D=null,Q=null,RF=0.065,byDate={};
+
+  function init(){
+    RF=D.meta.risk_free??0.065; Q=D.quarters; byDate=Object.fromEntries(Q.map((q,i)=>[q.date,i]));
+    $('stamp').textContent=`${Q.length} scoring quarters · ${Q[0].label} → ${Q[Q.length-1].label} · BiLSTM trained through ${D.models.bilstm.training_through} · data generated ${D.meta.generated}`;
+    const mSel=$('model'); mSel.innerHTML=''; Object.entries(D.models).forEach(([k,m])=>{const o=document.createElement('option');o.value=k;o.textContent=m.label||k;mSel.appendChild(o)});
+    const fSel=$('from'),tSel=$('to'); fSel.innerHTML='';tSel.innerHTML='';
+    Q.forEach((q,i)=>{for(const s of [fSel,tSel]){const o=document.createElement('option');o.value=i;o.textContent=`${shortLabel(q)} (${q.label})`;s.appendChild(o)}});
+    const firstTest=Q.findIndex(q=>q.date>D.models.bilstm.training_through);
+    const presets=[
+      ['Mar-22 → Sep-25 (15 q)', byDate['2022-03-31'], byDate['2025-09-30']],
+      ['Whole out-of-sample record', firstTest, Q.length-1],
+      ['Dec-21 → Sep-25 (16 q)', byDate['2021-12-31'], byDate['2025-09-30']],
+      ['Original 16 q (Mar-21 → Dec-24)', byDate['2021-03-31'], byDate['2024-12-31']],
+      ['16 q from Sep-2008 (in-sample)', byDate['2008-09-30'], byDate['2008-09-30']+15],
+      ['Full history', 0, Q.length-1],
+    ].filter(p=>p[1]!=null&&p[2]!=null);
+    fSel.value=presets[0][1]; tSel.value=presets[0][2];
+    const P=$('presets'); P.querySelectorAll('button').forEach(b=>b.remove());
+    presets.forEach(([n,a,b])=>{const btn=document.createElement('button');btn.type='button';btn.textContent=n;btn.onclick=()=>{fSel.value=a;tSel.value=b;$('len').value='';render()};P.appendChild(btn)});
+    $('len').onchange=()=>{const n=+$('len').value;if(n){tSel.value=Math.min(Q.length-1,+fSel.value+n-1)}render()};
+    [mSel,$('size'),$('bench'),fSel,tSel].forEach(el=>el.onchange=()=>{if(el===fSel&&$('len').value){tSel.value=Math.min(Q.length-1,+fSel.value+ +$('len').value-1)}render()});
+    render();
+  }
+
+  function stats(r,b){
+    const n=r.length, yrs=n/4;
+    const prod=r.reduce((a,x)=>a*(1+x),1);
+    const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+    const sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1))};
+    const cagr=Math.pow(prod,1/yrs)-1, vol=sd(r)*2;
+    let cum=1,peak=1,mdd=0; r.forEach(x=>{cum*=1+x;peak=Math.max(peak,cum);mdd=Math.min(mdd,cum/peak-1)});
+    const out={n,cagr,vol,sharpe:(mean(r)*4-RF)/vol,mdd,total:prod-1};
+    if(b&&b.length===n&&b.every(x=>x!=null)){
+      const ex=r.map((x,i)=>x-b[i]); const x=b.map(v=>v-RF/4), y=r.map(v=>v-RF/4);
+      const mx=mean(x),my=mean(y); const cov=x.reduce((s,v,i)=>s+(v-mx)*(y[i]-my),0)/(n-1), vx=sd(x)**2;
+      const beta=vx>0?cov/vx:NaN; out.beta=beta; out.alpha=(my-beta*mx)*4;
+      out.te=sd(ex)*2; out.ir=out.te>0?mean(ex)*4/out.te:NaN; out.hit=ex.filter(v=>v>0).length/n;
+      out.t=sd(ex)>0?mean(ex)/(sd(ex)/Math.sqrt(n)):NaN; out.bcagr=Math.pow(b.reduce((a,v)=>a*(1+v),1),1/yrs)-1; out.excess=mean(ex);
+    }
+    return out;
+  }
+
+  function lineChart(el,tip,series,shade){
+    const W=900,H=300,m={t:16,r:36,b:28,l:52}; const n=series[0].v.length;
+    const all=series.flatMap(s=>s.v.filter(v=>v!=null)); const lo=Math.min(...all)*0.95, hi=Math.max(...all)*1.05;
+    const x=i=>m.l+(i/(n-1||1))*(W-m.l-m.r), y=v=>m.t+(1-(v-lo)/(hi-lo||1))*(H-m.t-m.b);
+    const log=hi/lo>8; const yl=log?(v=>m.t+(1-(Math.log(v)-Math.log(lo))/(Math.log(hi)-Math.log(lo)))*(H-m.t-m.b)):y;
+    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Growth of 100">`;
+    let s=null; shade.forEach((t,i)=>{if(t&&s==null)s=i; if((!t||i===n-1)&&s!=null){const e=t?i:i-1; g+=`<rect x="${x(s)-((n>1)?(W-m.l-m.r)/(n-1)/2:0)}" y="${m.t}" width="${x(e)-x(s)+((n>1)?(W-m.l-m.r)/(n-1):0)}" height="${H-m.t-m.b}" fill="var(--insample-bg)"/>`; s=null}});
+    const ticks=5; for(let k=0;k<=ticks;k++){const v=log?Math.exp(Math.log(lo)+(k/ticks)*(Math.log(hi)-Math.log(lo))):lo+(k/ticks)*(hi-lo); const yy=yl(v); g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="var(--ink-3)">${v>=1000?Math.round(v/100)/10+'k':Math.round(v)}</text>`}
+    const step=Math.max(1,Math.ceil(n/8)); for(let i=0;i<n;i+=step){g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--ink-3)">${series[0].labels[i]}</text>`}
+    series.forEach(sr=>{const pts=sr.v.map((v,i)=>v==null?null:`${x(i).toFixed(1)},${yl(v).toFixed(1)}`).filter(Boolean); g+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${sr.c}" stroke-width="${sr.w||2}" stroke-linejoin="round"/>`; const last=sr.v.length-1; if(sr.v[last]!=null) g+=`<circle cx="${x(last)}" cy="${yl(sr.v[last])}" r="4" fill="${sr.c}" stroke="var(--panel)" stroke-width="2"/>`});
+    g+=`<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="var(--ink-3)" stroke-dasharray="3 3" style="display:none"/>`;
+    g+=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="transparent" id="hit"/></svg>`;
+    el.innerHTML=g; const svg=el.querySelector('svg'), hit=svg.querySelector('#hit'), xh=svg.querySelector('#xh');
+    const move=ev=>{const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width*W; const i=Math.round((px-m.l)/((W-m.l-m.r)/(n-1||1))); if(i<0||i>=n)return; xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.style.display='';
+      tip.style.display='block'; tip.style.left=(x(i)/W*r.width)+'px'; tip.style.top=(r.top-el.getBoundingClientRect().top+ m.t/H*r.height)+'px';
+      tip.innerHTML=`<b>${series[0].labels[i]}</b>`+series.map(sr=>`<br>${sr.name}: ${sr.v[i]==null?'–':sr.v[i].toFixed(1)}`).join('')};
+    hit.addEventListener('mousemove',move); hit.addEventListener('mouseleave',()=>{tip.style.display='none';xh.style.display='none'});
+  }
+  function barChart(el,vals,labels,shade){
+    const W=900,H=220,m={t:12,r:36,b:28,l:52}; const n=vals.length; const mx=Math.max(0.05,...vals.map(v=>Math.abs(v??0)))*1.1;
+    const bw=(W-m.l-m.r)/n; const y=v=>m.t+(1-(v+mx)/(2*mx))*(H-m.t-m.b);
+    let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Quarterly excess return">`;
+    for(const t of [-mx,-mx/2,0,mx/2,mx]){g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}" stroke="${t===0?'var(--ink-3)':'var(--line)'}"/><text x="${m.l-8}" y="${y(t)+4}" text-anchor="end" font-size="11" fill="var(--ink-3)">${(t*100).toFixed(0)}%</text>`}
+    vals.forEach((v,i)=>{if(v==null)return; const x0=m.l+i*bw+1, w=Math.max(2,bw-2); const top=Math.min(y(0),y(v)), h=Math.abs(y(0)-y(v)); const c=shade[i]?'var(--insample)':(v>=0?'var(--strategy)':'var(--bench)'); g+=`<rect x="${x0}" y="${top}" width="${w}" height="${h}" fill="${c}" rx="2"><title>${labels[i]}: ${(v*100).toFixed(1)}%</title></rect>`});
+    const step=Math.max(1,Math.ceil(n/8)); for(let i=0;i<n;i+=step){g+=`<text x="${m.l+i*bw+bw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--ink-3)">${labels[i]}</text>`}
+    g+='</svg>'; el.innerHTML=g;
+  }
+
+  function render(){
+    const mSel=$('model'),fSel=$('from'),tSel=$('to');
+    const model=D.models[mSel.value], size=$('size').value, bk=$('bench').value; const cut=model.training_through||D.meta.training_through; const inSample=q=>q.date<=cut;
+    let a=+fSel.value, b=+tSel.value; if(b<a){[a,b]=[b,a]}
+    const idx=[]; for(let i=a;i<=b;i++)idx.push(i);
+    const sMap=Object.fromEntries(model.series.map(s=>[s.date,s]));
+    const rows=idx.map(i=>{const q=Q[i], s=sMap[q.date]||{}; return {q,s,r:s['top'+size], bv:bk==='universe_ew'?q.universe_ew:(q.benchmarks||{})[bk], u:q.universe_ew}}).filter(x=>x.r!=null);
+    if(!rows.length){$('tiles').innerHTML='';return}
+    const r=rows.map(x=>x.r), bv=rows.map(x=>x.bv), u=rows.map(x=>x.u), labels=rows.map(x=>shortLabel(x.q)), shade=rows.map(x=>inSample(x.q));
+    const benchOK=bv.every(v=>v!=null); const st=stats(r,benchOK?bv:null); const su=stats(u,null);
+    const nTrain=shade.filter(Boolean).length;
+    $('banner').classList.toggle('on',nTrain>0); $('bannertext').textContent=` ${nTrain} of ${rows.length} quarters fall inside ${model.label}'s training period (through ${cut}). ${D.meta.in_sample_note}`;
+    const bl=BENCH_LABEL[bk]; $('lg2').textContent=bl; $('lg1').textContent=`${model.label} · top ${size}`;
+    const tiles=[
+      ['Model CAGR',fmtP(st.cagr),`${rows.length} quarters · total ${fmtP(st.total,0)}`,sgn(st.cagr),'primary'],
+      [bl+' CAGR',benchOK?fmtP(st.bcagr):'n/a',benchOK?`excess ${fmtP(st.cagr-st.bcagr)} p.a.`:'benchmark not available for all quarters',''],
+      ['Universe EW CAGR',fmtP(su.cagr),'every scored stock, equal weight',''],
+      ['Alpha (annual)',benchOK?fmtP(st.alpha):'–',benchOK?`beta ${fmtN(st.beta)} · t-stat ${fmtN(st.t,1)}`:'',sgn(st.alpha)],
+      ['Sharpe',fmtN(st.sharpe),`vol ${fmtP(st.vol)} · rf ${fmtP(RF)}`,''],
+      ['Max drawdown',fmtP(st.mdd),'peak to trough, quarterly','neg'],
+      ['Hit rate',benchOK?fmtP(st.hit,0):'–',benchOK?`info ratio ${fmtN(st.ir)} · TE ${fmtP(st.te)}`:'',''],
+    ];
+    $('tiles').innerHTML=tiles.map(t=>`<div class="tile ${t[4]||''}"><div class="k">${t[0]}</div><div class="v ${t[3]}">${t[1]}</div><div class="d">${t[2]}</div></div>`).join('');
+    const cum=arr=>{let c=100;return arr.map(v=>v==null?null:(c*=1+v))};
+    const series=[{name:`Model top ${size}`,v:cum(r),c:'var(--strategy)',w:2.5,labels},{name:bl,v:benchOK?cum(bv):r.map(()=>null),c:'var(--bench)',labels},{name:'Universe EW',v:cum(u),c:'var(--universe)',labels}];
+    $('growthcap').textContent=`${labels[0]} to ${labels[labels.length-1]} scoring dates · equal-weight, quarterly rebalance, price returns before costs`;
+    lineChart($('growth'),$('tip1'),series,shade);
+    barChart($('bars'),benchOK?r.map((v,i)=>v-bv[i]):r.map((v,i)=>v-u[i]),labels,shade);
+    const th=`<tr><th>Scoring date</th><th>Set</th><th>Model top ${size}</th><th>${bl}</th><th>Universe EW</th><th>Excess</th><th>Rank IC</th><th>Turnover</th></tr>`;
+    $('table').innerHTML=th+rows.map(x=>`<tr class="${inSample(x.q)?'train':'test'}"><td>${shortLabel(x.q)} · ${x.q.label}</td><td>${inSample(x.q)?'train':'test'}</td><td class="${sgn(x.r)}">${fmtP(x.r)}</td><td>${fmtP(x.bv)}</td><td>${fmtP(x.u)}</td><td class="${sgn(x.r-(x.bv??x.u))}">${fmtP(x.r-(x.bv??x.u))}</td><td>${fmtN(x.s.rank_ic,3)}</td><td>${fmtP(x.s['top'+size+'_turnover'],0)}</td></tr>`).join('');
+    $('notes').innerHTML=`<p>${D.meta.price_convention}</p><p>${D.meta.portfolio} Alpha and beta come from a regression of quarterly excess returns on the benchmark's; alpha is annualised. The t-stat tests whether the average quarterly excess return is different from zero: above about 2 is conventionally "significant".</p><p>${D.meta.benchmark_note}</p>${D.meta.comparison_note?`<p>${D.meta.comparison_note}</p>`:''}`;
+    // leaderboard: every model that has a return for every quarter in the window
+    const dates=rows.map(x=>x.q.date);
+    const lb=Object.entries(D.models).map(([k,m])=>{const sm=Object.fromEntries(m.series.map(s=>[s.date,s])); if(!dates.every(d=>sm[d]&&sm[d]['top'+size]!=null))return null; const rr=dates.map(d=>sm[d]['top'+size]); const s=stats(rr,benchOK?bv:null); const ic=dates.map(d=>sm[d].rank_ic).filter(v=>v!=null); return {k,label:m.label,s,ic:ic.length?ic.reduce((a,b)=>a+b,0)/ic.length:null}}).filter(Boolean).sort((a,b)=>b.s.cagr-a.s.cagr);
+    $('cmpcard').hidden=lb.length<2;
+    if(lb.length>=2){
+      $('cmptable').innerHTML=`<tr><th>Model</th><th>CAGR</th><th>Excess vs ${bl}</th><th>Alpha</th><th>Beta</th><th>t-stat</th><th>Sharpe</th><th>Max DD</th><th>Hit rate</th><th>Mean rank IC</th></tr>`+lb.map(x=>`<tr${x.k===mSel.value?' style="font-weight:600"':''}><td style="font-family:var(--font-body)">${x.label}</td><td class="${sgn(x.s.cagr)}">${fmtP(x.s.cagr)}</td><td class="${sgn(x.s.cagr-x.s.bcagr)}">${benchOK?fmtP(x.s.cagr-x.s.bcagr):'–'}</td><td>${benchOK?fmtP(x.s.alpha):'–'}</td><td>${benchOK?fmtN(x.s.beta):'–'}</td><td>${benchOK?fmtN(x.s.t,1):'–'}</td><td>${fmtN(x.s.sharpe)}</td><td class="neg">${fmtP(x.s.mdd)}</td><td>${benchOK?fmtP(x.s.hit,0):'–'}</td><td>${fmtN(x.ic,3)}</td></tr>`).join('');
+    }
+  }
+
+  fetch('/apps/zenojas/backtest.json').then(r=>r.json()).then(d=>{D=d;init()}).catch(e=>{$('stamp').textContent='Could not load backtest data ('+e.message+').'});
+  })();
+  </script>
+</Base>

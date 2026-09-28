@@ -1,8 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
+import ZenojasNav from '../../components/ZenojasNav.astro';
 import { Content as ModelCard } from '../../data/zenojas-model-card.md';
 ---
-<Base title="ZENOJAS Stock Model" description="ZENOJAS BiLSTM v1: quarterly stock-selection scores for ~940 NSE stocks, the 25-name portfolio, backtest against the NIFTY Midcap 100, and candid diagnostics.">
+<Base title="ZENOJAS Stock Model" description="ZENOJAS BiLSTM v1: quarterly stock-selection scores for ~940 NSE stocks, the 25-name portfolio, out-of-sample backtest against the NIFTY 50 and Midcap 100, and candid diagnostics.">
   <style is:global>
     .zn { display: grid; gap: 22px; }
     .zn-head { padding-block: 40px 8px; max-width: 72ch; }
@@ -45,6 +46,11 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     .stats b { font-family: var(--font-mono); font-weight: 500; }
     .warn { background: color-mix(in srgb, var(--mark) 14%, transparent); border-left: 3px solid var(--mark); padding: 10px 14px; border-radius: 6px; font-size: .95rem; color: var(--ink-2); }
     .prose-sm { font-size: .95rem; max-width: 72ch; }
+    .hl-controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+    .hl-controls label { font-size: .85rem; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+    .hl-controls select { font: inherit; font-size: .9rem; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--ink); }
+    .hl-period { font-family: var(--font-mono); font-size: .8rem; color: var(--ink-3); }
+    .kpi.insample { border-color: #C98500; }
     .prose-sm p { margin-bottom: .8em; }
   </style>
 
@@ -52,11 +58,28 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     <header class="zn-head">
       <div class="eyebrow">Tool · Machine-learning stock selection</div>
       <h1>ZENOJAS Stock Model</h1>
-      <p class="lede" style="color:var(--ink-2)">A Bidirectional LSTM scores every stock in a ~940-name NSE universe each quarter with the probability that its next-quarter return ranks in the top 200. The 25 highest-probability names form an equal-weight portfolio. Everything on this page is a published model output; the model itself runs offline.</p>
+      <p class="lede" style="color:var(--ink-2)">A Bidirectional LSTM scores every stock in a ~940-name NSE universe each quarter with the probability that its next-quarter return ranks in the top 200. The highest-probability names form an equal-weight portfolio. Everything on this page is a published model output; the model itself runs offline. New to this? Start with <a href="/tools/zenojas/how-it-works/">How it works</a>; the technical detail is in the <a href="/tools/zenojas/playbook/">Playbook</a>.</p>
+      <ZenojasNav current="model" />
       <div class="zn-stamp" id="stamp">loading model outputs…</div>
     </header>
 
-    <div class="kpis" id="kpis"></div>
+    <div class="panel" style="padding:14px 18px">
+      <div class="hl-controls">
+        <span class="eyebrow">Backtest window</span>
+        <label>Start quarter <select id="hl-start"></select></label>
+        <label>Quarters <select id="hl-n"><option>8</option><option>12</option><option>15</option><option selected>16</option><option>20</option><option>24</option></select></label>
+        <label>Portfolio <select id="hl-size"><option value="25">Top 25</option><option value="30" selected>Top 30</option><option value="50">Top 50</option></select></label>
+        <span class="hl-period" id="hl-period"></span>
+        <a href="/tools/zenojas/explorer/" style="margin-left:auto;font-size:.85rem">Full Explorer →</a>
+      </div>
+      <div class="warn" id="hl-warn" hidden style="margin:10px 0"></div>
+      <div class="kpis" id="headline" style="margin-top:12px"></div>
+    </div>
+
+    <div>
+      <div class="eyebrow" style="margin-bottom:8px">Latest scoring run · signal quality</div>
+      <div class="kpis" id="kpis"></div>
+    </div>
 
     <div class="panel">
       <div class="zn-tabs" role="tablist" id="tabs">
@@ -108,6 +131,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
           </div>
         </div>
         <div class="warn" id="btnote"></div>
+        <p style="font-size:.9rem;color:var(--ink-2)">This tab shows the scoring run's 14-quarter series against the NIFTY Midcap 100. For any window from 2005 to 2025, other portfolio sizes and factor-index benchmarks, use the <a href="/tools/zenojas/explorer/">Backtest Explorer</a>.</p>
       </div>
 
       <div class="tabpanel" id="tab-diag" hidden>
@@ -182,9 +206,8 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     $('stamp').textContent = `${M.model} · scored as of ${M.as_of} · ${M.universe_size} stocks · trained through ${M.trained_through}`;
     $('asof').textContent = `equal-weight 4% each · entry ${D.portfolio[0]?.entry_date || ''}`;
     $('kpis').innerHTML = [
-      ['Strategy CAGR', pct(S.cagr), `${S.period}`, 'primary'], ['Benchmark CAGR', pct(S.benchmark_cagr), M.benchmark], ['Universe EW CAGR', pct(S.universe_cagr), 'fairer yardstick (size tilt)'],
-      ['Sharpe', S.sharpe.toFixed(2), `benchmark ${S.benchmark_sharpe.toFixed(2)}`], ['Max drawdown', pct(S.max_drawdown), 'quarterly, price return'], ['Quarterly hit rate', pct(S.hit_rate, 0), `${S.quarters} quarters`],
       ['Test AUC', D.diagnostics.test_auc.toFixed(3), 'top-200 classifier · 0.5 = coin flip'], ['Mean rank IC', S.mean_rank_ic.toFixed(3), 'score vs next-quarter return'],
+      ['Quarterly hit rate', pct(S.hit_rate, 0), `${S.quarters} quarters vs ${M.benchmark}`], ['Annual turnover', (100 * S.turnover_annual).toFixed(0) + '%', 'of the 25-name book'],
     ].map(k => `<div class="kpi ${k[3] || ''}"><div class="eyebrow">${k[0]}</div><div class="v">${k[1]}</div><div class="u">${esc(k[2])}</div></div>`).join('');
     // portfolio
     $('ptable').innerHTML = '<thead><tr><th class="n">#</th><th>Ticker</th><th>Company</th><th>Band</th><th class="n">Score</th><th class="n">Weight</th></tr></thead><tbody>' + D.portfolio.map((p, i) => `<tr><td class="n">${i + 1}</td><td class="mono">${esc(p.ticker)}</td><td class="name">${esc(p.name)}</td><td>${p.mcap_band ? `<span class="band ${p.mcap_band}">${p.mcap_band}</span>` : '–'}</td><td class="n">${p.score.toFixed(3)}</td><td class="n">${pct(p.weight, 0)}</td></tr>`).join('') + '</tbody>';
@@ -217,6 +240,37 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
   $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { $('tabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b)); document.querySelectorAll('.zn .tabpanel').forEach(p => p.hidden = p.id !== 'tab-' + b.dataset.tab); });
   ['q', 'fband', 'fdec', 'fimp'].forEach(id => $(id).addEventListener('input', () => D && renderUniverse()));
   fetch('/apps/zenojas/outputs.json').then(r => r.json()).then(d => { D = d; render(); }).catch(e => { $('stamp').textContent = 'Could not load model outputs (' + e.message + ').'; });
+
+  // Headline: any window of the BiLSTM series, computed from the same file the Backtest Explorer uses.
+  let HB = null;
+  function renderHeadline() {
+    const B = HB, RF = B.meta.risk_free ?? 0.065, cut = B.models.bilstm.training_through || B.meta.training_through;
+    const size = 'top' + $('hl-size').value, want = +$('hl-n').value, startIdx = +$('hl-start').value;
+    const sMap = Object.fromEntries(B.models.bilstm.series.map(s => [s.date, s]));
+    const rows = B.quarters.slice(startIdx, startIdx + want).filter(q => sMap[q.date] && sMap[q.date][size] != null);
+    const n = rows.length; if (n < 2) { $('headline').innerHTML = ''; return; }
+    const yrs = n / 4, r = rows.map(q => sMap[q.date][size]), u = rows.map(q => q.universe_ew), bAll = rows.map(q => q.benchmarks?.nifty50), benchOK = bAll.every(v => v != null), b = benchOK ? bAll : null;
+    const mean = a => a.reduce((s, x) => s + x, 0) / a.length, sd = a => { const m = mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); };
+    const cagr = a => Math.pow(a.reduce((p, x) => p * (1 + x), 1), 1 / yrs) - 1;
+    let cum = 1, peak = 1, mdd = 0; r.forEach(x => { cum *= 1 + x; peak = Math.max(peak, cum); mdd = Math.min(mdd, cum / peak - 1); });
+    const vol = sd(r) * 2, sharpe = (mean(r) * 4 - RF) / vol;
+    let alpha, beta, t, hit;
+    if (b) { const ex = r.map((x, i) => x - b[i]), X = b.map(v => v - RF / 4), Y = r.map(v => v - RF / 4), mx = mean(X), my = mean(Y); beta = X.reduce((s, v, i) => s + (v - mx) * (Y[i] - my), 0) / (n - 1) / sd(X) ** 2; alpha = (my - beta * mx) * 4; t = mean(ex) / (sd(ex) / Math.sqrt(n)); hit = ex.filter(v => v > 0).length / n; }
+    const nIn = rows.filter(q => q.date <= cut).length, cls = nIn ? 'insample' : '';
+    $('hl-period').textContent = `${rows[0].label} → ${rows[n - 1].label} · ${n} quarters${n < want ? ` (${want} requested; later quarters not yet realised)` : ''} · vs NIFTY 50`;
+    $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: the BiLSTM was trained through ${cut}, so returns before the Mar-2022 scoring date are flattered by outcomes the model had already seen. Start at Mar-2022 for the honest out-of-sample record.` : '';
+    $('headline').innerHTML = [
+      ['Model CAGR', pct(cagr(r)), `${$('hl-size').selectedOptions[0].text.toLowerCase()}, equal weight, before costs`, 'primary'], ['NIFTY 50 CAGR', b ? pct(cagr(b)) : 'n/a', b ? `excess ${pct(cagr(r) - cagr(b))} p.a.` : 'benchmark not available for all quarters'], ['Universe EW CAGR', pct(cagr(u)), 'fairer yardstick (size tilt)'],
+      ['Alpha (annual)', b ? pct(alpha) : '–', b ? `beta ${beta.toFixed(2)} · t-stat ${t.toFixed(1)}` : ''], ['Sharpe', sharpe.toFixed(2), `vol ${pct(vol, 0)} · rf ${pct(RF)}`], ['Max drawdown', pct(mdd), 'peak to trough, quarterly'], ['Hit rate vs NIFTY 50', b ? pct(hit, 0) : '–', `${n} quarters`],
+    ].map(k => `<div class="kpi ${k[3] || ''} ${cls}"><div class="eyebrow">${k[0]}</div><div class="v">${k[1]}</div><div class="u">${esc(k[2])}</div></div>`).join('');
+  }
+  fetch('/apps/zenojas/backtest.json').then(r => r.json()).then(B => {
+    HB = B; const cut = B.models.bilstm.training_through || B.meta.training_through;
+    const sel = $('hl-start'); B.quarters.forEach((q, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${q.label} (${q.date.slice(0, 7)})${q.date <= cut ? ' · in-sample' : ''}`; sel.appendChild(o); });
+    sel.value = B.quarters.findIndex(q => q.date > cut);
+    ['hl-start', 'hl-n', 'hl-size'].forEach(id => $(id).addEventListener('change', renderHeadline));
+    renderHeadline();
+  }).catch(() => { $('headline').innerHTML = '<div class="kpi"><div class="u">Backtest series not available.</div></div>'; });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => D && render());
   </script>
 </Base>
