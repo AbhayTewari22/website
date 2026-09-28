@@ -117,6 +117,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     Q.forEach((q,i)=>{for(const s of [fSel,tSel]){const o=document.createElement('option');o.value=i;o.textContent=`${shortLabel(q)} (${q.label})`;s.appendChild(o)}});
     const firstTest=Q.findIndex(q=>q.date>D.models.bilstm.training_through);
     const presets=[
+      ['Mar-22 → Dec-25 (16 q, out-of-sample)', byDate['2022-03-31'], byDate['2025-12-31']],
       ['Mar-22 → Sep-25 (15 q)', byDate['2022-03-31'], byDate['2025-09-30']],
       ['Whole out-of-sample record', firstTest, Q.length-1],
       ['Dec-21 → Sep-25 (16 q)', byDate['2021-12-31'], byDate['2025-09-30']],
@@ -208,7 +209,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     barChart($('bars'),benchOK?r.map((v,i)=>v-bv[i]):r.map((v,i)=>v-u[i]),labels,shade);
     const th=`<tr><th>Scoring date</th><th>Set</th><th>Model top ${size}</th><th>${bl}</th><th>Universe EW</th><th>Excess</th><th>Rank IC</th><th>Turnover</th></tr>`;
     $('table').innerHTML=th+rows.map(x=>`<tr class="${inSample(x.q)?'train':'test'}"><td>${shortLabel(x.q)} · ${x.q.label}</td><td>${inSample(x.q)?'train':'test'}</td><td class="${sgn(x.r)}">${fmtP(x.r)}</td><td>${fmtP(x.bv)}</td><td>${fmtP(x.u)}</td><td class="${sgn(x.r-(x.bv??x.u))}">${fmtP(x.r-(x.bv??x.u))}</td><td>${fmtN(x.s.rank_ic,3)}</td><td>${fmtP(x.s['top'+size+'_turnover'],0)}</td></tr>`).join('');
-    $('notes').innerHTML=`<p>${D.meta.price_convention}</p><p>${D.meta.portfolio} Alpha and beta come from a regression of quarterly excess returns on the benchmark's; alpha is annualised. The t-stat tests whether the average quarterly excess return is different from zero: above about 2 is conventionally "significant".</p><p>${D.meta.benchmark_note}</p>${D.meta.comparison_note?`<p>${D.meta.comparison_note}</p>`:''}`;
+    $('notes').innerHTML=`<p>${D.meta.price_convention}</p><p>${D.meta.portfolio} Alpha and beta come from a regression of quarterly excess returns on the benchmark's; alpha is annualised. The t-stat tests whether the average quarterly excess return is different from zero: above about 2 is conventionally "significant".</p><p>${D.meta.benchmark_note}</p>${D.meta.comparison_note?`<p>${D.meta.comparison_note}</p>`:''}${D.meta.notes_dec25?`<p>${D.meta.notes_dec25}</p>`:''}`;
     // leaderboard: every model that has a return for every quarter in the window
     const dates=rows.map(x=>x.q.date);
     const lb=Object.entries(D.models).map(([k,m])=>{const sm=Object.fromEntries(m.series.map(s=>[s.date,s])); if(!dates.every(d=>sm[d]&&sm[d]['top'+size]!=null))return null; const rr=dates.map(d=>sm[d]['top'+size]); const s=stats(rr,benchOK?bv:null); const ic=dates.map(d=>sm[d].rank_ic).filter(v=>v!=null); return {k,label:m.label,s,ic:ic.length?ic.reduce((a,b)=>a+b,0)/ic.length:null}}).filter(Boolean).sort((a,b)=>b.s.cagr-a.s.cagr);

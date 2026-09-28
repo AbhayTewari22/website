@@ -36,7 +36,7 @@ Two further precautions. First, a company's quarterly accounts are published abo
 
 The [Backtest Explorer](/tools/zenojas/explorer/) lets you pick any run of quarters from 2005 to 2025, including the years the model learned from. When your selection includes those years, the chart is shaded amber and a warning appears. The returns in those quarters are real prices, but the model had already seen how those quarters turned out when it was being built, so its picks there are flattered. A sixteen-quarter run starting in September 2008, for example, shows a compound return above 100% a year. That is not skill; it is memory. The shading is there so that nobody, including us, quotes an in-sample number as if it were a test result.
 
-The test period, March 2022 to September 2025, is unshaded. Those are the numbers to judge the model on. It is fifteen quarters today; the sixteenth, December 2025, will be added once its holding-period prices are in. Starting a sixteen-quarter window one or two quarters earlier, in the training period, lifts the compound return to about 43% a year, and the page will tell you so rather than let the number stand.
+The test period, March 2022 to December 2025, is unshaded: sixteen scoring quarters, the last of them held from the end of February to the end of May 2026. Those are the numbers to judge the model on. Starting a sixteen-quarter window one or two quarters earlier, in the training period, lifts the compound return to about 43% a year, and the page will tell you so rather than let the number stand.
 
 ## How to read the numbers
 
@@ -48,17 +48,17 @@ The test period, March 2022 to September 2025, is unshaded. Those are the number
 
 **Maximum drawdown** is the worst peak-to-trough fall in the period. If you had invested at the worst possible moment, this is how much you would have been down before recovering. For the model over the test period it is about 29%, which happened in the September 2024 quarter. Anyone considering the strategy should be comfortable with a fall of that size.
 
-**Beta** says how much the portfolio moves when the market moves. A beta of 2 means that when the NIFTY 50 falls 10%, the portfolio tends to fall 20%. The model's portfolio has a beta of about 2, so a good part of its outperformance in rising markets is simply that it is a higher-octane portfolio. **Alpha** is what is left after accounting for that: the return the portfolio earned beyond what its market exposure alone would explain. Alpha is the number that measures selection skill, and it is annualised so it can be read like a CAGR.
+**Beta** says how much the portfolio moves when the market moves. A beta of 2 means that when the NIFTY 50 falls 10%, the portfolio tends to fall 20%. The model's portfolio has a beta of about 1.8, so a good part of its outperformance in rising markets is simply that it is a higher-octane portfolio. **Alpha** is what is left after accounting for that: the return the portfolio earned beyond what its market exposure alone would explain. Alpha is the number that measures selection skill, and it is annualised so it can be read like a CAGR.
 
 **Hit rate** is the share of quarters in which the portfolio beat the benchmark. **Information ratio** is the average outperformance divided by how erratic that outperformance was; above 1 is strong.
 
-**The t-statistic** answers a question people rarely ask of a backtest: could this outperformance be luck? It compares the average quarterly gap over the benchmark with how much that gap bounces around. A t-statistic above about 2 means the outperformance would be unlikely to occur by chance; below 1 means the data cannot distinguish the strategy from a coin flip. Over the fifteen test quarters from March 2022 the model's t-statistic against the NIFTY 50 is about 2.5.
+**The t-statistic** answers a question people rarely ask of a backtest: could this outperformance be luck? It compares the average quarterly gap over the benchmark with how much that gap bounces around. A t-statistic above about 2 means the outperformance would be unlikely to occur by chance; below 1 means the data cannot distinguish the strategy from a coin flip. Over the sixteen test quarters from March 2022 the model's t-statistic against the NIFTY 50 is about 2.8.
 
 ## What the test period showed
 
-Over the fifteen quarters from March 2022 to September 2025 the model's top-30 portfolio compounded at about 37% a year before costs, against 12% for the NIFTY 50 and 24% for an equal-weighted basket of every company the model looked at. It beat the NIFTY 50 in 80% of quarters. After allowing for its higher market exposure, the alpha was about 19% a year.
+Over the sixteen quarters from March 2022 to December 2025 the model's top-30 portfolio compounded at about 39% a year before costs, against 9% for the NIFTY 50 and 24% for an equal-weighted basket of every company the model looked at. It beat the NIFTY 50 in 13 of the 16 quarters. After allowing for its higher market exposure, the alpha was about 26% a year.
 
-Two comparisons keep that in proportion. The equal-weighted basket, which involves no selection at all, earned 24%, so about half of the model's gap over the NIFTY 50 comes from simply owning a broad, equal-weighted mix of mid and small companies rather than the fifty largest. And a ready-made index, the NIFTY 200 Value 30, earned 34% over the same period with a third less volatility. The model beat it, but not by a wide margin, and that index can be bought as a fund for a few basis points a year.
+Two comparisons keep that in proportion. The equal-weighted basket, which involves no selection at all, earned 24%, so about half of the model's gap over the NIFTY 50 comes from simply owning a broad, equal-weighted mix of mid and small companies rather than the fifty largest. And a ready-made index, the NIFTY 200 Value 30, earned 30% over the same period with a quarter less volatility. The model beat it, but not by a wide margin, and that index can be bought as a fund for a few basis points a year.
 
 ## What we are still working on
 
