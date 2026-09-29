@@ -257,7 +257,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     let alpha, beta, t, hit;
     if (b) { const ex = r.map((x, i) => x - b[i]), X = b.map(v => v - RF / 4), Y = r.map(v => v - RF / 4), mx = mean(X), my = mean(Y); beta = X.reduce((s, v, i) => s + (v - mx) * (Y[i] - my), 0) / (n - 1) / sd(X) ** 2; alpha = (my - beta * mx) * 4; t = mean(ex) / (sd(ex) / Math.sqrt(n)); hit = ex.filter(v => v > 0).length / n; }
     const nIn = rows.filter(q => q.date <= cut).length, cls = nIn ? 'insample' : '';
-    $('hl-period').textContent = `${rows[0].label} → ${rows[n - 1].label} · ${n} quarters${n < want ? ` (${want} requested; later quarters not yet realised)` : ''} · vs NIFTY 50`;
+    const dl = d => new Date(d).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); $('hl-period').textContent = `scored ${dl(rows[0].date)} → ${dl(rows[n - 1].date)} · ${n} quarters${n < want ? ` (${want} requested; later quarters not yet realised)` : ''} · vs NIFTY 50`;
     $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: the BiLSTM was trained through ${cut}, so returns before the Mar-2022 scoring date are flattered by outcomes the model had already seen. Start at Mar-2022 for the honest out-of-sample record.` : '';
     $('headline').innerHTML = [
       ['Model CAGR', pct(cagr(r)), `${$('hl-size').selectedOptions[0].text.toLowerCase()}, equal weight, before costs`, 'primary'], ['NIFTY 50 CAGR', b ? pct(cagr(b)) : 'n/a', b ? `excess ${pct(cagr(r) - cagr(b))} p.a.` : 'benchmark not available for all quarters'], ['Universe EW CAGR', pct(cagr(u)), 'fairer yardstick (size tilt)'],
@@ -266,7 +266,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
   }
   fetch('/apps/zenojas/backtest.json').then(r => r.json()).then(B => {
     HB = B; const cut = B.models.bilstm.training_through || B.meta.training_through;
-    const sel = $('hl-start'); B.quarters.forEach((q, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${q.label} (${q.date.slice(0, 7)})${q.date <= cut ? ' · in-sample' : ''}`; sel.appendChild(o); });
+    const sel = $('hl-start'); B.quarters.forEach((q, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `Scored ${new Date(q.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}${q.date <= cut ? ' · in-sample' : ''}`; sel.appendChild(o); });
     sel.value = B.quarters.findIndex(q => q.date > cut);
     ['hl-start', 'hl-n', 'hl-size'].forEach(id => $(id).addEventListener('change', renderHeadline));
     renderHeadline();

@@ -91,7 +91,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
 
     <div class="card">
       <h2>Quarter by quarter</h2>
-      <p class="cap">Scoring date is when the ranking was made; the return is earned over the following quarter after a 60-day entry lag (the 31-Mar row uses 1-Jun to 1-Sep prices).</p>
+      <p class="cap">Scoring date is the quarter-end whose financials the ranking uses; the return is earned over the following quarter after a 60-day reporting lag (the 31 March 2022 row is held from 31 May to 31 August 2022).</p>
       <div class="tablewrap"><table id="table"></table></div>
     </div>
 
@@ -107,14 +107,15 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
   const sgn=(x)=>x==null||isNaN(x)?'':(x>=0?'pos':'neg');
   const BENCH_LABEL={nifty50:'NIFTY 50',universe_ew:'Universe equal-weight',quality30:'NIFTY 200 Quality 30',momentum30:'NIFTY 200 Momentum 30',value30:'NIFTY 200 Value 30',midcap100:'NIFTY Midcap 100'};
   const shortLabel=q=>{const d=new Date(q.date);return d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})};
+  const longLabel=q=>{const d=new Date(q.date);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};
   let D=null,Q=null,RF=0.065,byDate={};
 
   function init(){
     RF=D.meta.risk_free??0.065; Q=D.quarters; byDate=Object.fromEntries(Q.map((q,i)=>[q.date,i]));
-    $('stamp').textContent=`${Q.length} scoring quarters · ${Q[0].label} → ${Q[Q.length-1].label} · BiLSTM trained through ${D.models.bilstm.training_through} · data generated ${D.meta.generated}`;
+    $('stamp').textContent=`${Q.length} scoring quarters · ${longLabel(Q[0])} → ${longLabel(Q[Q.length-1])} · BiLSTM trained through ${D.models.bilstm.training_through} · data generated ${D.meta.generated}`;
     const mSel=$('model'); mSel.innerHTML=''; Object.entries(D.models).forEach(([k,m])=>{const o=document.createElement('option');o.value=k;o.textContent=m.label||k;mSel.appendChild(o)});
     const fSel=$('from'),tSel=$('to'); fSel.innerHTML='';tSel.innerHTML='';
-    Q.forEach((q,i)=>{for(const s of [fSel,tSel]){const o=document.createElement('option');o.value=i;o.textContent=`${shortLabel(q)} (${q.label})`;s.appendChild(o)}});
+    Q.forEach((q,i)=>{for(const s of [fSel,tSel]){const o=document.createElement('option');o.value=i;o.textContent=`Scored ${longLabel(q)}`;s.appendChild(o)}});
     const firstTest=Q.findIndex(q=>q.date>D.models.bilstm.training_through);
     const presets=[
       ['Mar-22 → Dec-25 (16 q, out-of-sample)', byDate['2022-03-31'], byDate['2025-12-31']],
@@ -208,7 +209,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     lineChart($('growth'),$('tip1'),series,shade);
     barChart($('bars'),benchOK?r.map((v,i)=>v-bv[i]):r.map((v,i)=>v-u[i]),labels,shade);
     const th=`<tr><th>Scoring date</th><th>Set</th><th>Model top ${size}</th><th>${bl}</th><th>Universe EW</th><th>Excess</th><th>Rank IC</th><th>Turnover</th></tr>`;
-    $('table').innerHTML=th+rows.map(x=>`<tr class="${inSample(x.q)?'train':'test'}"><td>${shortLabel(x.q)} · ${x.q.label}</td><td>${inSample(x.q)?'train':'test'}</td><td class="${sgn(x.r)}">${fmtP(x.r)}</td><td>${fmtP(x.bv)}</td><td>${fmtP(x.u)}</td><td class="${sgn(x.r-(x.bv??x.u))}">${fmtP(x.r-(x.bv??x.u))}</td><td>${fmtN(x.s.rank_ic,3)}</td><td>${fmtP(x.s['top'+size+'_turnover'],0)}</td></tr>`).join('');
+    $('table').innerHTML=th+rows.map(x=>`<tr class="${inSample(x.q)?'train':'test'}"><td>${longLabel(x.q)}</td><td>${inSample(x.q)?'train':'test'}</td><td class="${sgn(x.r)}">${fmtP(x.r)}</td><td>${fmtP(x.bv)}</td><td>${fmtP(x.u)}</td><td class="${sgn(x.r-(x.bv??x.u))}">${fmtP(x.r-(x.bv??x.u))}</td><td>${fmtN(x.s.rank_ic,3)}</td><td>${fmtP(x.s['top'+size+'_turnover'],0)}</td></tr>`).join('');
     $('notes').innerHTML=`<p>${D.meta.price_convention}</p><p>${D.meta.portfolio} Alpha and beta come from a regression of quarterly excess returns on the benchmark's; alpha is annualised. The t-stat tests whether the average quarterly excess return is different from zero: above about 2 is conventionally "significant".</p><p>${D.meta.benchmark_note}</p>${D.meta.comparison_note?`<p>${D.meta.comparison_note}</p>`:''}${D.meta.notes_dec25?`<p>${D.meta.notes_dec25}</p>`:''}`;
     // leaderboard: every model that has a return for every quarter in the window
     const dates=rows.map(x=>x.q.date);

@@ -1,0 +1,155 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ZenojasNav from '../../../components/ZenojasNav.astro';
+---
+<Base title="ZENOJAS Predicted Stocks by Quarter" description="See exactly which stocks the ZENOJAS BiLSTM ranked highest at any quarter-end, the probability it assigned, the entry and exit prices over the lagged holding window, and the return each pick delivered.">
+  <style is:global>
+    .pk { display: grid; gap: 20px; --good: var(--ok); --bad: #C0392B; --insample: #C98500; --insample-bg: rgba(201,133,0,.12); }
+    :root[data-theme="dark"] .pk { --bad: #E67373; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pk { --bad: #E67373; } }
+    .pk-head { padding-block: 40px 4px; max-width: 72ch; }
+    .pk .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); align-items: end; }
+    .pk .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+    .pk select, .pk input, .pk button { font: inherit; font-size: .9rem; color: var(--ink); background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; min-height: 36px; }
+    .pk button { cursor: pointer; } .pk button:hover { border-color: var(--accent); color: var(--accent); }
+    .pk select:focus-visible, .pk input:focus-visible, .pk button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .pk .status { font-size: .85rem; color: var(--ink-2); border-left: 4px solid var(--insample); background: var(--insample-bg); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+    .pk .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .pk .tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+    .pk .tile.primary { border-color: var(--accent); }
+    .pk .tile .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+    .pk .tile .v { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.15; }
+    .pk .tile .d { font-size: 12px; color: var(--ink-2); }
+    .pk .pos { color: var(--good); } .pk .neg { color: var(--bad); }
+    .pk .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); min-width: 0; }
+    .pk .card h2 { font-size: 1.15rem; margin: 0 0 2px; }
+    .pk .card .cap { font-size: .85rem; color: var(--ink-3); margin: 0 0 10px; }
+    .pk .tablewrap { overflow-x: auto; }
+    .pk table { border-collapse: collapse; width: 100%; font-size: .85rem; font-variant-numeric: tabular-nums; }
+    .pk th, .pk td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; font-family: var(--font-mono); }
+    .pk th:nth-child(-n+2), .pk td:nth-child(-n+2) { text-align: left; }
+    .pk td.tk { text-transform: uppercase; font-weight: 600; }
+    .pk th { color: var(--ink-3); font-weight: 600; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; font-family: var(--font-body); position: sticky; top: 0; background: var(--panel); }
+    .pk tr.beyond td { color: var(--ink-3); }
+    .pk .bar { display: inline-block; height: 8px; border-radius: 2px; vertical-align: middle; margin-left: 6px; }
+    .pk .notes { font-size: .9rem; color: var(--ink-2); max-width: 78ch; } .pk .notes p { margin: 0 0 6px; }
+    .pk .hist { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+    .pk .hist button { text-align: left; display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: .8rem; }
+    .pk .hist button[aria-current="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  </style>
+
+  <div class="pk">
+    <header class="pk-head">
+      <div class="eyebrow">Tool · ZENOJAS · Predicted stocks</div>
+      <h1>Predicted stocks by quarter</h1>
+      <p class="lede" style="color:var(--ink-2)">Choose a scoring date and see the stocks the model ranked highest, the probability it assigned to each, and what each pick returned over the lagged holding window. Everything on this page comes from the model's own output files, so any quarter's portfolio can be audited stock by stock.</p>
+      <ZenojasNav current="picks" />
+      <div class="zn-stamp" id="stamp" style="font-family:var(--font-mono);font-size:.85rem;color:var(--ink-3);margin-top:8px">loading predictions…</div>
+    </header>
+
+    <div class="controls">
+      <label>Model<select id="model"></select></label>
+      <label>Scoring date<select id="quarter"></select></label>
+      <label>Portfolio<select id="size"><option value="25">Top 25</option><option value="30" selected>Top 30</option><option value="50">Top 50</option></select></label>
+      <label>Find a stock<input id="find" type="search" placeholder="e.g. hal" autocomplete="off" /></label>
+      <label>&nbsp;<button id="csv" type="button">Download this quarter (CSV)</button></label>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <section class="card">
+      <h2 id="ttl">Portfolio</h2>
+      <p class="cap" id="cap"></p>
+      <div class="tablewrap"><table id="tbl"><thead><tr><th>Rank</th><th>Ticker</th><th>Probability</th><th>Entry price</th><th>Exit price</th><th>Return</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="card" id="findcard" style="display:none">
+      <h2>Stock history</h2>
+      <p class="cap" id="findcap"></p>
+      <div class="tablewrap"><table id="ftbl"><thead><tr><th>Scoring date</th><th>Ticker</th><th>Rank</th><th>Probability</th><th>In portfolio</th><th>Return</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <h2>All quarters</h2>
+      <p class="cap">Equal-weight return of the selected portfolio size in each quarter. Click a quarter to open it.</p>
+      <div class="hist" id="hist"></div>
+    </section>
+
+    <section class="notes">
+      <p><b>Reading the table.</b> Rank is the model's ordering of the whole universe at the scoring date (1 = highest probability of a top-200 return next quarter). The portfolio is the top N by rank, equal-weighted. Entry and exit prices are the closes at the start and end of the holding window, which begins two months after the scoring date to allow for reporting lag; where an entry or exit price was not available, the stock is shown but excluded from the portfolio return.</p>
+      <p><b>Two series.</b> The <em>stored-predictions</em> series is the model run whose output file underlies the dissertation (trained to December 2020, scored March 2021 onwards); its weights are being re-verified. The <em>saved-weights</em> series is regenerated end to end from the weights in the repository (trained to December 2021, scored March 2022 onwards). The Backtest Explorer's summary statistics use the same holding convention.</p>
+    </section>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const pct = (x, d = 1) => x == null ? '—' : ((x * 100).toFixed(d) + '%');
+    const cls = (x) => x == null ? '' : (x >= 0 ? 'pos' : 'neg');
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const longLabel = (iso) => { const [y, m, d] = iso.split('-'); return `${+d} ${MON[+m - 1]} ${y}`; };
+    const holdLabel = (h) => h.split(' -> ').map(longLabel).join(' → ');
+    let D, model, quarter;
+    const mSel = $('#model'), qSel = $('#quarter'), sSel = $('#size'), find = $('#find');
+
+    fetch('/apps/zenojas/picks.json').then(r => r.json()).then(d => {
+      D = d;
+      mSel.innerHTML = Object.entries(D.models).map(([k, m]) => `<option value="${k}">${m.label}</option>`).join('');
+      model = mSel.value; fillQuarters(); render();
+      $('#stamp').textContent = `predictions file generated ${longLabel(D.meta.generated)}`;
+    }).catch(() => { $('#stamp').textContent = 'could not load predictions file'; });
+
+    function fillQuarters() {
+      const qs = Object.keys(D.models[model].quarters).sort().reverse();
+      qSel.innerHTML = qs.map(q => `<option value="${q}">${longLabel(q)}</option>`).join('');
+      if (!qs.includes(quarter)) quarter = qs[0]; qSel.value = quarter;
+    }
+    function ewReturn(q, n) {
+      const rs = q.picks.filter(p => p.r != null).slice(0, n).map(p => p.r);
+      return rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null;
+    }
+    function render() {
+      const M = D.models[model], Q = M.quarters[quarter], n = +sSel.value;
+      $('#status').textContent = `${M.label}. ${M.status} Training data runs to ${longLabel(M.training_through)}; every quarter shown here is after that date.`;
+      const ew = ewReturn(Q, n), have = Q.picks.slice(0, n).filter(p => p.r != null).length;
+      $('#tiles').innerHTML = [
+        ['primary', `Top ${n} equal-weight`, pct(ew), `${have} of ${n} with prices`],
+        ['', 'Universe equal-weight', pct(Q.universe_ew), `${Q.n_with_return} stocks`],
+        ['', 'Excess vs universe', ew == null ? '—' : ((ew - Q.universe_ew) * 100).toFixed(1) + ' pp', 'same window'],
+        ['', 'Stocks scored', Q.n_scored, 'at ' + longLabel(quarter)],
+      ].map(([c, k, v, d]) => `<div class="tile ${c}"><span class="k">${k}</span><span class="v ${c ? cls(ew) : ''}">${v}</span><span class="d">${d}</span></div>`).join('');
+      $('#ttl').textContent = `Top ${n} at ${longLabel(quarter)}`;
+      $('#cap').textContent = `Held ${holdLabel(Q.hold)}. Ranks beyond ${n} are shown in grey for context.`;
+      const maxAbs = Math.max(...Q.picks.slice(0, 50).map(p => Math.abs(p.r ?? 0)), 0.01);
+      $('#tbl tbody').innerHTML = Q.picks.slice(0, Math.max(n, 50)).map(p => {
+        const w = p.r == null ? 0 : Math.round(Math.abs(p.r) / maxAbs * 60);
+        return `<tr class="${p.rank > n ? 'beyond' : ''}"><td>${p.rank}</td><td class="tk">${p.t}</td><td>${p.p.toFixed(3)}</td><td>${p.p0 ?? '—'}</td><td>${p.p1 ?? '—'}</td><td class="${cls(p.r)}">${pct(p.r)}<span class="bar" style="width:${w}px;background:currentColor;opacity:.5"></span></td></tr>`;
+      }).join('');
+      $('#hist').innerHTML = Object.keys(M.quarters).sort().map(q => {
+        const r = ewReturn(M.quarters[q], n);
+        return `<button type="button" data-q="${q}" aria-current="${q === quarter}"><span>${longLabel(q)}</span><span class="${cls(r)}">${pct(r)}</span></button>`;
+      }).join('');
+      renderFind();
+    }
+    function renderFind() {
+      const s = find.value.trim().toLowerCase(), card = $('#findcard');
+      if (!s) { card.style.display = 'none'; return; }
+      const M = D.models[model], n = +sSel.value, rows = [];
+      for (const q of Object.keys(M.quarters).sort()) {
+        for (const p of M.quarters[q].picks) if (p.t.startsWith(s)) rows.push([q, p]);
+      }
+      card.style.display = ''; $('#findcap').textContent = rows.length ? `Quarters in which a ticker starting "${s}" ranked in the top ${M.quarters[Object.keys(M.quarters)[0]].picks.length} (the file stores the top ranks only).` : `No ticker starting "${s}" in the stored ranks.`;
+      $('#ftbl tbody').innerHTML = rows.map(([q, p]) => `<tr><td>${longLabel(q)}</td><td class="tk">${p.t}</td><td>${p.rank}</td><td>${p.p.toFixed(3)}</td><td>${p.rank <= n ? 'Yes' : ''}</td><td class="${cls(p.r)}">${pct(p.r)}</td></tr>`).join('');
+    }
+    mSel.addEventListener('change', () => { model = mSel.value; fillQuarters(); render(); });
+    qSel.addEventListener('change', () => { quarter = qSel.value; render(); });
+    sSel.addEventListener('change', render);
+    find.addEventListener('input', renderFind);
+    $('#hist').addEventListener('click', (e) => { const b = e.target.closest('button[data-q]'); if (b) { quarter = b.dataset.q; qSel.value = quarter; render(); window.scrollTo({ top: $('#tiles').offsetTop - 80, behavior: 'smooth' }); } });
+    $('#csv').addEventListener('click', () => {
+      const Q = D.models[model].quarters[quarter];
+      const lines = ['scoring_date,holding_window,rank,ticker,probability,entry_price,exit_price,return', ...Q.picks.map(p => [quarter, Q.hold, p.rank, p.t, p.p, p.p0 ?? '', p.p1 ?? '', p.r ?? ''].join(','))];
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = `zenojas_${model}_${quarter}.csv`; a.click();
+    });
+  </script>
+</Base>

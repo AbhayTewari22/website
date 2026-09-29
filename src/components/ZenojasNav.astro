@@ -1,9 +1,10 @@
 ---
-interface Props { current: 'model' | 'explorer' | 'how' | 'playbook' }
+interface Props { current: 'model' | 'explorer' | 'picks' | 'how' | 'playbook' }
 const { current } = Astro.props;
 const items: [string, string, string][] = [
   ['model', '/tools/zenojas/', 'Model outputs'],
   ['explorer', '/tools/zenojas/explorer/', 'Backtest Explorer'],
+  ['picks', '/tools/zenojas/picks/', 'Predicted stocks'],
   ['how', '/tools/zenojas/how-it-works/', 'How it works'],
   ['playbook', '/tools/zenojas/playbook/', 'Playbook'],
 ];
