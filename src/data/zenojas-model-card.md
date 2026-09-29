@@ -6,7 +6,7 @@
 
 **Inputs (11 quarterly features per stock).** Three-month price return (TMR), momentum (200-day minus 50-day moving average), beta and Jensen alpha versus the NIFTY Midcap 100, industry-relative price z-score, earnings yield (E/P), book-to-price (B/P), sales-to-price (S/P), a dividend-payer flag, debt-to-equity and EPS. These survived a VIF / correlation screen of a wider 30-ratio panel (ROCE, ROE, growth rates, EV/EBITDA, PEG and others were dropped for multicollinearity). Skewed features are power-transformed (Yeo-Johnson; Box-Cox for E/P and S/P) and standardised.
 
-**Data and training window.** Quarterly fundamentals and prices from Bloomberg, Q4 FY05 onward. Training uses 2005 – 2021 (34,077 stock-quarters); the hold-out is a strict time-based split covering Mar-2022 to Dec-2024 (10,788 stock-quarters, 12 quarters). Two later quarters (Mar-2025, Jun-2025) were scored fully out-of-time and are shown separately as "live".
+**Data and training window.** Quarterly fundamentals and prices from Bloomberg, Q4 FY05 onward. Training uses 2005 – 2020 (64 quarters, 39,716 stock-quarters); the split is strictly time-based and every quarter from Mar-2021 to Mar-2026 (21 quarters, 19,237 stock-quarters) is scored out-of-sample with the frozen model.
 
 **Target.** 1 if the stock's next-quarter return rank is ≤ 200, else 0 (base rate ≈ 21 %).
 

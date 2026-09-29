@@ -20,7 +20,7 @@ That is all. The model does not know the company's name, its sector or what it m
 
 ## How the model learned
 
-We have quarterly data for these companies going back to March 2005. We showed the model the first seventeen years, from 2005 to the end of 2021, and for each company in each quarter we told it two things: here are the eleven numbers, and here is whether the share ended up in the top fifth of performers over the following three months. Over sixty-eight quarters and about 45,000 such examples, the model adjusted itself until its scores lined up as well as they could with the actual outcomes.
+We have quarterly data for these companies going back to March 2005. We showed the model the first sixteen years, from 2005 to the end of 2020, and for each company in each quarter we told it two things: here are the eleven numbers, and here is whether the share ended up in the top 200 performers over the following three months. Over sixty-four quarters and about 40,000 such examples, the model adjusted itself until its scores lined up as well as they could with the actual outcomes.
 
 The model is a type of neural network. The name (a bidirectional LSTM) matters less than the idea: it is a very flexible pattern-finder, capable of picking up combinations of the eleven numbers that a simple rule of thumb would miss. That flexibility is also its weakness, which is why the testing described next matters more than the architecture.
 
@@ -28,15 +28,15 @@ The model is a type of neural network. The name (a bidirectional LSTM) matters l
 
 This is the part most worth understanding, because it is where honest and dishonest backtests part ways.
 
-Once the model had learned from 2005 to 2021, we froze it. From March 2022 onwards it never learned anything new. Each quarter we gave it the eleven numbers for every company, took its top 30, and recorded what those shares actually did over the following three months. The model was making predictions about a future it had never seen, exactly as it would if we were running real money.
+Once the model had learned from 2005 to 2020, we froze it. From March 2021 onwards it never learned anything new. Each quarter we gave it the eleven numbers for every company, took its top 30, and recorded what those shares actually did over the following three months. The model was making predictions about a future it had never seen, exactly as it would if we were running real money.
 
 Two further precautions. First, a company's quarterly accounts are published about two months after the quarter ends, so a ranking made "as of 31 March" could not actually have been made on 31 March. We therefore buy on 1 June and measure to 1 September, and so on through the year. Every return you see on this site is on that lagged basis. Second, we kept the companies that later failed or were delisted in the data set. Removing them would make the past look safer than it was.
 
 ## Why some quarters are shaded on the Explorer
 
-The [Backtest Explorer](/tools/zenojas/explorer/) lets you pick any run of quarters from 2005 to 2025, including the years the model learned from. When your selection includes those years, the chart is shaded amber and a warning appears. The returns in those quarters are real prices, but the model had already seen how those quarters turned out when it was being built, so its picks there are flattered. A sixteen-quarter run starting in September 2008, for example, shows a compound return above 100% a year. That is not skill; it is memory. The shading is there so that nobody, including us, quotes an in-sample number as if it were a test result.
+The [Backtest Explorer](/tools/zenojas/explorer/) lets you pick any run of quarters from 2005 to 2026, including the years the model learned from. When your selection includes those years, the chart is shaded amber and a warning appears. The returns in those quarters are real prices, but the model had already seen how those quarters turned out when it was being built, so its picks there are flattered. A sixteen-quarter run starting in September 2008, for example, shows a compound return above 100% a year. That is not skill; it is memory. The shading is there so that nobody, including us, quotes an in-sample number as if it were a test result.
 
-The test period, March 2022 to December 2025, is unshaded: sixteen scoring quarters, the last of them held from the end of February to the end of May 2026. Those are the numbers to judge the model on. Starting a sixteen-quarter window one or two quarters earlier, in the training period, lifts the compound return to about 43% a year, and the page will tell you so rather than let the number stand.
+The test period, March 2021 to March 2026, is unshaded: twenty-one scoring quarters, the last of them held from the end of May to the end of August 2026. Those are the numbers to judge the model on. Starting a window inside the training period lifts the compound return well above 100% a year, and the page will tell you so rather than let the number stand.
 
 ## How to read the numbers
 
@@ -52,11 +52,11 @@ The test period, March 2022 to December 2025, is unshaded: sixteen scoring quart
 
 **Hit rate** is the share of quarters in which the portfolio beat the benchmark. **Information ratio** is the average outperformance divided by how erratic that outperformance was; above 1 is strong.
 
-**The t-statistic** answers a question people rarely ask of a backtest: could this outperformance be luck? It compares the average quarterly gap over the benchmark with how much that gap bounces around. A t-statistic above about 2 means the outperformance would be unlikely to occur by chance; below 1 means the data cannot distinguish the strategy from a coin flip. Over the sixteen test quarters from March 2022 the model's t-statistic against the NIFTY 50 is about 2.8.
+**The t-statistic** answers a question people rarely ask of a backtest: could this outperformance be luck? It compares the average quarterly gap over the benchmark with how much that gap bounces around. A t-statistic above about 2 means the outperformance would be unlikely to occur by chance; below 1 means the data cannot distinguish the strategy from a coin flip. Over the twenty-one test quarters from March 2021 the model's t-statistic against the NIFTY 50 is about 3.0.
 
 ## What the test period showed
 
-Over the sixteen quarters from March 2022 to December 2025 the model's top-30 portfolio compounded at about 39% a year before costs, against 9% for the NIFTY 50 and 24% for an equal-weighted basket of every company the model looked at. It beat the NIFTY 50 in 13 of the 16 quarters. After allowing for its higher market exposure, the alpha was about 26% a year.
+Over the twenty-one quarters from March 2021 to March 2026 the model's top-30 portfolio compounded at about 36% a year before costs, against 9% for the NIFTY 50 and 25% for an equal-weighted basket of every company the model looked at. It beat the NIFTY 50 in 17 of the 21 quarters. After allowing for its higher market exposure, the alpha was about 25% a year. Every number is regenerated from the saved model file, and every quarter's portfolio can be inspected on the Predicted stocks page.
 
 Two comparisons keep that in proportion. The equal-weighted basket, which involves no selection at all, earned 24%, so about half of the model's gap over the NIFTY 50 comes from simply owning a broad, equal-weighted mix of mid and small companies rather than the fifty largest. And a ready-made index, the NIFTY 200 Value 30, earned 30% over the same period with a quarter less volatility. The model beat it, but not by a wide margin, and that index can be bought as a fund for a few basis points a year.
 

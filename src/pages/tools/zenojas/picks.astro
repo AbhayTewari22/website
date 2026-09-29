@@ -78,7 +78,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
 
     <section class="notes">
       <p><b>Reading the table.</b> Rank is the model's ordering of the whole universe at the scoring date (1 = highest probability of a top-200 return next quarter). The portfolio is the top N by rank, equal-weighted. Entry and exit prices are the closes at the start and end of the holding window, which begins two months after the scoring date to allow for reporting lag; where an entry or exit price was not available, the stock is shown but excluded from the portfolio return.</p>
-      <p><b>Two series.</b> The <em>stored-predictions</em> series is the model run whose output file underlies the dissertation (trained to December 2020, scored March 2021 onwards); its weights are being re-verified. The <em>saved-weights</em> series is regenerated end to end from the weights in the repository (trained to December 2021, scored March 2022 onwards). The Backtest Explorer's summary statistics use the same holding convention.</p>
+      <p><b>Provenance.</b> Every row is regenerated from the saved model file (<code>bi_lstm_top200_xform_16qtr.keras</code>, with its label encoder and scaler) and the supporting workbook's inputs and lagged prices: training data ran to 31 December 2020, so all twenty-one quarters shown are out-of-sample. The Backtest Explorer's statistics are computed from these same portfolios.</p>
     </section>
   </div>
 

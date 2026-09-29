@@ -67,7 +67,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
       <div class="hl-controls">
         <span class="eyebrow">Backtest window</span>
         <label>Start quarter <select id="hl-start"></select></label>
-        <label>Quarters <select id="hl-n"><option>8</option><option>12</option><option>15</option><option selected>16</option><option>20</option><option>24</option></select></label>
+        <label>Quarters <select id="hl-n"><option>8</option><option>12</option><option>15</option><option>16</option><option>17</option><option>20</option><option selected>21</option><option>24</option></select></label>
         <label>Portfolio <select id="hl-size"><option value="25">Top 25</option><option value="30" selected>Top 30</option><option value="50">Top 50</option></select></label>
         <span class="hl-period" id="hl-period"></span>
         <a href="/tools/zenojas/explorer/" style="margin-left:auto;font-size:.85rem">Full Explorer →</a>
@@ -258,7 +258,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     if (b) { const ex = r.map((x, i) => x - b[i]), X = b.map(v => v - RF / 4), Y = r.map(v => v - RF / 4), mx = mean(X), my = mean(Y); beta = X.reduce((s, v, i) => s + (v - mx) * (Y[i] - my), 0) / (n - 1) / sd(X) ** 2; alpha = (my - beta * mx) * 4; t = mean(ex) / (sd(ex) / Math.sqrt(n)); hit = ex.filter(v => v > 0).length / n; }
     const nIn = rows.filter(q => q.date <= cut).length, cls = nIn ? 'insample' : '';
     const dl = d => new Date(d).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); $('hl-period').textContent = `scored ${dl(rows[0].date)} → ${dl(rows[n - 1].date)} · ${n} quarters${n < want ? ` (${want} requested; later quarters not yet realised)` : ''} · vs NIFTY 50`;
-    $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: the BiLSTM was trained through ${cut}, so returns before the Mar-2022 scoring date are flattered by outcomes the model had already seen. Start at Mar-2022 for the honest out-of-sample record.` : '';
+    $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: the BiLSTM was trained through ${cut}, so returns before the Mar-2021 scoring date are flattered by outcomes the model had already seen. Start at Mar-2021 for the honest out-of-sample record.` : '';
     $('headline').innerHTML = [
       ['Model CAGR', pct(cagr(r)), `${$('hl-size').selectedOptions[0].text.toLowerCase()}, equal weight, before costs`, 'primary'], ['NIFTY 50 CAGR', b ? pct(cagr(b)) : 'n/a', b ? `excess ${pct(cagr(r) - cagr(b))} p.a.` : 'benchmark not available for all quarters'], ['Universe EW CAGR', pct(cagr(u)), 'fairer yardstick (size tilt)'],
       ['Alpha (annual)', b ? pct(alpha) : '–', b ? `beta ${beta.toFixed(2)} · t-stat ${t.toFixed(1)}` : ''], ['Sharpe', sharpe.toFixed(2), `vol ${pct(vol, 0)} · rf ${pct(RF)}`], ['Max drawdown', pct(mdd), 'peak to trough, quarterly'], ['Hit rate vs NIFTY 50', b ? pct(hit, 0) : '–', `${n} quarters`],

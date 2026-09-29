@@ -64,6 +64,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     </div>
     <div class="presets" id="presets"><span class="eyebrow">Presets</span></div>
 
+    <div class="banner on" id="gapnote" style="display:none;border-left-color:var(--bad)"></div>
     <div class="banner" id="banner"><b>In-sample quarters included.</b><span id="bannertext"></span></div>
 
     <div class="tiles" id="tiles"></div>
@@ -118,11 +119,10 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     Q.forEach((q,i)=>{for(const s of [fSel,tSel]){const o=document.createElement('option');o.value=i;o.textContent=`Scored ${longLabel(q)}`;s.appendChild(o)}});
     const firstTest=Q.findIndex(q=>q.date>D.models.bilstm.training_through);
     const presets=[
-      ['Mar-22 → Dec-25 (16 q, out-of-sample)', byDate['2022-03-31'], byDate['2025-12-31']],
-      ['Mar-22 → Sep-25 (15 q)', byDate['2022-03-31'], byDate['2025-09-30']],
-      ['Whole out-of-sample record', firstTest, Q.length-1],
-      ['Dec-21 → Sep-25 (16 q)', byDate['2021-12-31'], byDate['2025-09-30']],
-      ['Original 16 q (Mar-21 → Dec-24)', byDate['2021-03-31'], byDate['2024-12-31']],
+      ['Whole out-of-sample record (21 q, Mar-21 → Mar-26)', firstTest, Q.length-1],
+      ['Dissertation window (16 q, Mar-21 → Dec-24)', byDate['2021-03-31'], byDate['2024-12-31']],
+      ['Latest 16 q (Mar-22 → Dec-25)', byDate['2022-03-31'], byDate['2025-12-31']],
+      ['Latest 17 q (Mar-22 → Mar-26)', byDate['2022-03-31'], byDate['2026-03-31']],
       ['16 q from Sep-2008 (in-sample)', byDate['2008-09-30'], byDate['2008-09-30']+15],
       ['Full history', 0, Q.length-1],
     ].filter(p=>p[1]!=null&&p[2]!=null);
@@ -186,7 +186,9 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     let a=+fSel.value, b=+tSel.value; if(b<a){[a,b]=[b,a]}
     const idx=[]; for(let i=a;i<=b;i++)idx.push(i);
     const sMap=Object.fromEntries(model.series.map(s=>[s.date,s]));
-    const rows=idx.map(i=>{const q=Q[i], s=sMap[q.date]||{}; return {q,s,r:s['top'+size], bv:bk==='universe_ew'?q.universe_ew:(q.benchmarks||{})[bk], u:q.universe_ew}}).filter(x=>x.r!=null);
+    const all=idx.map(i=>{const q=Q[i], s=sMap[q.date]||{}; return {q,s,r:s['top'+size], bv:bk==='universe_ew'?q.universe_ew:(q.benchmarks||{})[bk], u:q.universe_ew}});
+    const missing=all.filter(x=>x.r==null).map(x=>longLabel(x.q)); const rows=all.filter(x=>x.r!=null);
+    $('gapnote').style.display=missing.length?'block':'none'; $('gapnote').textContent=missing.length?`${model.label} has no score for ${missing.length} of the ${all.length} quarters selected (${missing.slice(0,4).join(', ')}${missing.length>4?', …':''}). Statistics below use only the ${rows.length} quarters it covers, and the benchmark is measured over those same quarters — so its figure differs from the full window. Choose a window the model covers to compare like with like.`:'';
     if(!rows.length){$('tiles').innerHTML='';return}
     const r=rows.map(x=>x.r), bv=rows.map(x=>x.bv), u=rows.map(x=>x.u), labels=rows.map(x=>shortLabel(x.q)), shade=rows.map(x=>inSample(x.q));
     const benchOK=bv.every(v=>v!=null); const st=stats(r,benchOK?bv:null); const su=stats(u,null);
