@@ -254,14 +254,14 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     const cagr = a => Math.pow(a.reduce((p, x) => p * (1 + x), 1), 1 / yrs) - 1;
     let cum = 1, peak = 1, mdd = 0; r.forEach(x => { cum *= 1 + x; peak = Math.max(peak, cum); mdd = Math.min(mdd, cum / peak - 1); });
     const vol = sd(r) * 2, sharpe = (mean(r) * 4 - RF) / vol;
-    let alpha, beta, t, hit;
-    if (b) { const ex = r.map((x, i) => x - b[i]), X = b.map(v => v - RF / 4), Y = r.map(v => v - RF / 4), mx = mean(X), my = mean(Y); beta = X.reduce((s, v, i) => s + (v - mx) * (Y[i] - my), 0) / (n - 1) / sd(X) ** 2; alpha = (my - beta * mx) * 4; t = mean(ex) / (sd(ex) / Math.sqrt(n)); hit = ex.filter(v => v > 0).length / n; }
+    let alpha, beta, t, hit, te, ir;
+    if (b) { const ex = r.map((x, i) => x - b[i]), X = b.map(v => v - RF / 4), Y = r.map(v => v - RF / 4), mx = mean(X), my = mean(Y); beta = X.reduce((s, v, i) => s + (v - mx) * (Y[i] - my), 0) / (n - 1) / sd(X) ** 2; alpha = (my - beta * mx) * 4; t = mean(ex) / (sd(ex) / Math.sqrt(n)); hit = ex.filter(v => v > 0).length / n; te = sd(ex) * 2; ir = te > 0 ? mean(ex) * 4 / te : NaN; }
     const nIn = rows.filter(q => q.date <= cut).length, cls = nIn ? 'insample' : '';
     const dl = d => new Date(d).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); $('hl-period').textContent = `scored ${dl(rows[0].date)} → ${dl(rows[n - 1].date)} · ${n} quarters${n < want ? ` (${want} requested; later quarters not yet realised)` : ''} · vs NIFTY 50`;
     $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: the BiLSTM was trained through ${cut}, so returns before the Mar-2021 scoring date are flattered by outcomes the model had already seen. Start at Mar-2021 for the honest out-of-sample record.` : '';
     $('headline').innerHTML = [
       ['Model CAGR', pct(cagr(r)), `${$('hl-size').selectedOptions[0].text.toLowerCase()}, equal weight, before costs`, 'primary'], ['NIFTY 50 CAGR', b ? pct(cagr(b)) : 'n/a', b ? `excess ${pct(cagr(r) - cagr(b))} p.a.` : 'benchmark not available for all quarters'], ['Universe EW CAGR', pct(cagr(u)), 'fairer yardstick (size tilt)'],
-      ['Alpha (annual)', b ? pct(alpha) : '–', b ? `beta ${beta.toFixed(2)} · t-stat ${t.toFixed(1)}` : ''], ['Sharpe', sharpe.toFixed(2), `vol ${pct(vol, 0)} · rf ${pct(RF)}`], ['Max drawdown', pct(mdd), 'peak to trough, quarterly'], ['Hit rate vs NIFTY 50', b ? pct(hit, 0) : '–', `${n} quarters`],
+      ['Alpha (annual)', b ? pct(alpha) : '–', b ? `beta ${beta.toFixed(2)} · t-stat ${t.toFixed(1)}` : ''], ['Sharpe', sharpe.toFixed(2), `vol ${pct(vol, 0)} · rf ${pct(RF)}`], ['Max drawdown', pct(mdd), 'peak to trough, quarterly'], ['Information ratio', b ? ir.toFixed(2) : '–', b ? `excess return ÷ tracking error, vs NIFTY 50` : ''], ['Tracking error', b ? pct(te) : '–', 'annualised sd of quarterly excess return'], ['Hit rate vs NIFTY 50', b ? pct(hit, 0) : '–', `${n} quarters`],
     ].map(k => `<div class="kpi ${k[3] || ''} ${cls}"><div class="eyebrow">${k[0]}</div><div class="v">${k[1]}</div><div class="u">${esc(k[2])}</div></div>`).join('');
   }
   fetch('/apps/zenojas/backtest.json').then(r => r.json()).then(B => {
