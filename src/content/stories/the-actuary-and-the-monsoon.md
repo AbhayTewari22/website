@@ -1,28 +1,58 @@
 ---
 title: "The actuary and the monsoon"
-description: "A short story about a man who spent his life estimating the probability of rain, and one afternoon in Navi Mumbai when it did not matter."
+description: "A short story about a retired actuary who recorded the monsoon for thirty-one years, and the afternoon his granddaughter told him the rain could take its own attendance."
 date: 2026-09-05
 kind: story
 ---
 
-Every year in the first week of June, Raghav Iyer took out the same notebook and wrote the same heading: *Onset*. Beneath it he recorded the date the India Meteorological Department declared the monsoon's arrival over Kerala, and beside that the date it actually rained on the balcony of his flat in Seawoods, which was a different thing, and which he considered the only figure that had ever really belonged to him.
+Every June, Raghav Iyer had recorded the arrival of the monsoon. He had noted it and compared with the official predicted date, the first rain in Seawoods, and any difference between the two. Even the weather, he felt, should explain its delays.
 
-He had been an actuary for thirty-one years. He had priced crop insurance in three states, reserved for a cyclone that killed nine thousand people, and once, in a meeting he still thought about, told a board that their flood model was wrong by a factor of two and been proved right the following August. He was, by the standards of his profession, a man who understood rain.
+Raghav had been an actuary for thirty-one years. His job was to calculate risks, and he was very good at it. He could spot a mistake in a spreadsheet faster than his wife could spot him reaching for a third samosa.
 
-His granddaughter did not care about any of this. Meera was seven, and what she wanted to know, standing on the balcony with her palms turned up to a sky the colour of an old steel plate, was whether it would rain *today*.
+His days ran neatly: morning walk, newspaper, tea, calculations. Even retirement had arrived without disturbing the timetable.
 
-"Probably," said Raghav.
+One afternoon, his seven-year-old granddaughter, Aditi, joined him on the balcony. Dark clouds gathered overhead.
 
-"How probably?"
+“Will it rain, Dadu?”
 
-He considered the question with the seriousness it deserved. The onset had been declared on the second; it was now the eighth; the satellite loop that morning had shown a band of convection sitting over the Konkan coast like a cat deciding whether to move. "Seventy percent," he said.
+“There’s a seventy percent chance.”
 
-Meera looked at him with the contempt that only the very young can manage. "That's not an answer."
+Aditi frowned. “Should I bring my umbrella or just the seventy percent of it?”
 
-He had heard this before, from chief executives, from regulators, from his own wife. He had a speech about it: that seventy percent *was* an answer, that it was in fact the only honest kind, that the people who said *yes* or *no* were either lucky or lying. He opened his mouth to give it.
+From inside, his wife laughed. Raghav chose to ignore this.
 
-The first drop hit the railing between them, fat and loud, and left a mark the size of a rupee coin.
+He began explaining how weather predictions worked. Aditi held out her hand. A large raindrop landed on her palm.
 
-Meera screamed with joy and ran inside to tell her grandmother. Raghav stayed where he was. He watched the mark spread and darken and then vanish under a hundred others, and he thought about the notebook, and about the thirty-one Junes recorded in it, and about the fact that not one of them had felt like this.
+“It’s a hundred percent now!” she announced.
 
-He did not write anything down that day. It was the first time.
+“Technically, one drop doesn’t—”
+
+But Aditi had already run inside, calling, “Dadi! Rain! We need pakoras!”
+
+Soon, rain pattered on the balcony roof. The air smelled of wet earth. A cool breeze brushed Raghav’s face, and from the kitchen came the sound of sizzling oil.
+
+He reached for his notebook.
+
+Aditi returned and caught his hand. “Dadu, the rain is here. You can take its attendance later.”
+
+He looked at her, then at the notebook. Thirty-one years of dates and measurements. He could tell her when the monsoon had arrived each year. He could hardly remember the last time he had simply enjoyed it.
+
+Somewhere along the way, being careful and correct had become a habit that filled almost every moment.
+
+He put the notebook down and held his hand out beside hers. Rain splashed his sleeve. Aditi giggled. He found himself laughing too.
+
+His wife Meera appeared with tea and pakoras.
+
+“How many?” she asked.
+
+“Three,” said Raghav.
+
+She raised an eyebrow.
+
+“All right. Four. Let’s work with accurate data.”
+
+Later, he entered the date in his notebook. Underneath, he added something new:
+
+“Rain lovely. Pakoras excellent. The company of Aditi and Meera even better.”
+
+His figures had always been right. Today, he had remembered to enjoy what they couldn’t capture.
