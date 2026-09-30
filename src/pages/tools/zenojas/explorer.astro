@@ -202,7 +202,9 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
       ['Alpha (annual)',benchOK?fmtP(st.alpha):'–',benchOK?`beta ${fmtN(st.beta)} · t-stat ${fmtN(st.t,1)}`:'',sgn(st.alpha)],
       ['Sharpe',fmtN(st.sharpe),`vol ${fmtP(st.vol)} · rf ${fmtP(RF)}`,''],
       ['Max drawdown',fmtP(st.mdd),'peak to trough, quarterly','neg'],
-      ['Hit rate',benchOK?fmtP(st.hit,0):'–',benchOK?`info ratio ${fmtN(st.ir)} · TE ${fmtP(st.te)}`:'',''],
+      ['Information ratio',benchOK?fmtN(st.ir):'–',benchOK?`excess return ÷ tracking error, vs ${bl}`:'',sgn(st.ir)],
+      ['Tracking error',benchOK?fmtP(st.te):'–','annualised sd of quarterly excess return',''],
+      ['Hit rate',benchOK?fmtP(st.hit,0):'–',benchOK?`quarters ahead of ${bl}`:'',''],
     ];
     $('tiles').innerHTML=tiles.map(t=>`<div class="tile ${t[4]||''}"><div class="k">${t[0]}</div><div class="v ${t[3]}">${t[1]}</div><div class="d">${t[2]}</div></div>`).join('');
     const cum=arr=>{let c=100;return arr.map(v=>v==null?null:(c*=1+v))};
@@ -218,7 +220,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     const lb=Object.entries(D.models).map(([k,m])=>{const sm=Object.fromEntries(m.series.map(s=>[s.date,s])); if(!dates.every(d=>sm[d]&&sm[d]['top'+size]!=null))return null; const rr=dates.map(d=>sm[d]['top'+size]); const s=stats(rr,benchOK?bv:null); const ic=dates.map(d=>sm[d].rank_ic).filter(v=>v!=null); return {k,label:m.label,s,ic:ic.length?ic.reduce((a,b)=>a+b,0)/ic.length:null}}).filter(Boolean).sort((a,b)=>b.s.cagr-a.s.cagr);
     $('cmpcard').hidden=lb.length<2;
     if(lb.length>=2){
-      $('cmptable').innerHTML=`<tr><th>Model</th><th>CAGR</th><th>Excess vs ${bl}</th><th>Alpha</th><th>Beta</th><th>t-stat</th><th>Sharpe</th><th>Max DD</th><th>Hit rate</th><th>Mean rank IC</th></tr>`+lb.map(x=>`<tr${x.k===mSel.value?' style="font-weight:600"':''}><td style="font-family:var(--font-body)">${x.label}</td><td class="${sgn(x.s.cagr)}">${fmtP(x.s.cagr)}</td><td class="${sgn(x.s.cagr-x.s.bcagr)}">${benchOK?fmtP(x.s.cagr-x.s.bcagr):'–'}</td><td>${benchOK?fmtP(x.s.alpha):'–'}</td><td>${benchOK?fmtN(x.s.beta):'–'}</td><td>${benchOK?fmtN(x.s.t,1):'–'}</td><td>${fmtN(x.s.sharpe)}</td><td class="neg">${fmtP(x.s.mdd)}</td><td>${benchOK?fmtP(x.s.hit,0):'–'}</td><td>${fmtN(x.ic,3)}</td></tr>`).join('');
+      $('cmptable').innerHTML=`<tr><th>Model</th><th>CAGR</th><th>Excess vs ${bl}</th><th>Alpha</th><th>Beta</th><th>t-stat</th><th>Sharpe</th><th>IR</th><th>TE</th><th>Max DD</th><th>Hit rate</th><th>Mean rank IC</th></tr>`+lb.map(x=>`<tr${x.k===mSel.value?' style="font-weight:600"':''}><td style="font-family:var(--font-body)">${x.label}</td><td class="${sgn(x.s.cagr)}">${fmtP(x.s.cagr)}</td><td class="${sgn(x.s.cagr-x.s.bcagr)}">${benchOK?fmtP(x.s.cagr-x.s.bcagr):'–'}</td><td>${benchOK?fmtP(x.s.alpha):'–'}</td><td>${benchOK?fmtN(x.s.beta):'–'}</td><td>${benchOK?fmtN(x.s.t,1):'–'}</td><td>${fmtN(x.s.sharpe)}</td><td>${benchOK?fmtN(x.s.ir):'–'}</td><td>${benchOK?fmtP(x.s.te):'–'}</td><td class="neg">${fmtP(x.s.mdd)}</td><td>${benchOK?fmtP(x.s.hit,0):'–'}</td><td>${fmtN(x.ic,3)}</td></tr>`).join('');
     }
   }
 
