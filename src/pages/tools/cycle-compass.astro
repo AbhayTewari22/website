@@ -46,6 +46,29 @@ import Base from '../../layouts/Base.astro';
     .flag.ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
     .tranche { font-size: .95rem; color: var(--ink-2); }
     .tranche li { margin-bottom: 6px; }
+    .asof { font-family: var(--font-mono); font-size: .8rem; color: var(--ink-3); margin-top: 8px; }
+    .tilt { font-family: var(--font-mono); font-size: .8rem; color: var(--ink-3); margin-left: 6px; }
+    .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) { .mgrid { grid-template-columns: 1fr; } }
+    .prob { display: grid; grid-template-columns: 120px 1fr 44px; gap: 8px; align-items: center; font-size: .85rem; color: var(--ink-2); margin: 4px 0; }
+    .prob .bar { margin-top: 0; height: 8px; }
+    .prob b { font-family: var(--font-mono); font-weight: 400; text-align: right; }
+    .timeline { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin: 6px 0 2px; }
+    .timeline i { flex: 1 1 0; }
+    .tl-axis { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: .7rem; color: var(--ink-3); }
+    .ph0 { background: #2E7D4F; } .ph1 { background: #17849B; } .ph2 { background: #B7791F; } .ph3 { background: #A23B3B; }
+    .key { display: flex; gap: 12px; flex-wrap: wrap; font-size: .78rem; color: var(--ink-2); margin-top: 6px; }
+    .key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+    .picks { display: grid; gap: 8px; }
+    .pick { display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .pick .rk { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent); }
+    .pick b { display: block; }
+    .pick span { font-size: .82rem; color: var(--ink-3); }
+    table.sc { border-collapse: collapse; width: 100%; font-size: .85rem; }
+    .sc th, .sc td { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+    .sc th { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+    .sc td.n { text-align: right; font-family: var(--font-mono); }
+    .scwrap { overflow-x: auto; }
   </style>
 
   <div class="cc">
@@ -53,8 +76,11 @@ import Base from '../../layouts/Base.astro';
       <div class="eyebrow">Tool · Business-cycle investing</div>
       <h1>Cycle Compass</h1>
       <p class="lede" style="color:var(--ink-2)">Take the temperature of the cycle the way the rulebook says to: form the hypothesis with leading indicators, confirm with coincident ones, use lags only as a cross-check. Score each signal for India and the US, and the compass returns the phase, a confidence level, and the sector and ETF tilts for it.</p>
-      <div class="toolbar"><button id="presetAug26">Load the August 2026 read</button><button id="clearAll">Clear</button><button id="copyLink">Copy my reading</button></div>
+      <div class="toolbar"><button id="presetBtn">Load the latest read</button><button id="clearAll">Clear</button><button id="copyLink">Copy my reading</button></div>
+      <p class="asof" id="asof"></p>
     </header>
+
+    <section class="panel" id="model" hidden></section>
 
     <div class="cc-grid">
       <section class="panel" id="panel-in"></section>
@@ -78,7 +104,7 @@ import Base from '../../layouts/Base.astro';
 
     <section class="panel">
       <h2>How the phase is scored</h2>
-      <p style="font-size:.95rem;color:var(--ink-2)">Each signal is matched to the phase whose description fits best. Leading signals (composite leading index, PMI, credit growth, yield curve, market valuations and psychology) carry weight 2, 2, 1.5, 1.5 and 1; policy, earnings and inflation carry 1 each, and inflation is a lag, so it never decides a phase on its own. The phase with the highest weighted score is declared; confidence is the margin between the top two phases as a share of the total, mapped to Low (under 15%), Medium (15–35%) and High (over 35%). A Low reading is labelled Mixed and the compass recommends the barbell, not a directional tilt. India's thresholds are calibrated to its high trend growth: a "contraction" is a growth recession, not negative GDP.</p>
+      <p style="font-size:.95rem;color:var(--ink-2)">Each signal is matched to the phase whose description fits best. Leading signals (composite leading index, PMI, credit growth, yield curve, market valuations and psychology) carry weight 2, 2, 1.5, 1.5 and 1; policy, earnings and the three coincident activity signals carry 1 each. Inflation is a lag: it is left out of the phase score and used only to break a tie and as a confirmation flag. A phase is declared only when at least three of the five leading signals are scored. Confidence is the margin between the top two phases as a share of the total, scaled down by the share of signals scored, and mapped to Low (under 15%), Medium (15–35%) and High (over 35%); a Low reading is labelled Mixed and the compass recommends the barbell. The crude overlay moves the India reading one phase later, and the PMI and US overlays cap confidence at Medium. Once you have a reading from an earlier month, the declared phase changes only when the new phase leads the old one by at least 15%. India's thresholds are calibrated to its high trend growth: a "contraction" is a growth recession, not negative GDP.</p>
       <p class="notice">Analytical framework for study, not investment advice. The author is not a SEBI-registered investment adviser. Phase patterns may not repeat; validate with your own judgement or a registered adviser.</p>
     </section>
   </div>
@@ -93,8 +119,14 @@ import Base from '../../layouts/Base.astro';
     { id: 'val', name: 'Valuations & psychology', sub: 'Marks: where is the pendulum?', w: 1, lead: true, opts: ['Cheap; disbelief', 'Fair; confidence', 'Expensive; euphoria / FOMO', 'Cheap and getting cheaper; fear'] },
     { id: 'policy', name: 'Policy stance', sub: 'RBI / Fed', w: 1, opts: ['Aggressively easy', 'Moving to neutral', 'Tightening or restrictive hold', 'Pivot to easing'] },
     { id: 'earn', name: 'Earnings revisions', sub: 'Breadth of upgrades', w: 1, opts: ['Downgrades ending', 'Broad upgrades', 'Margins peak; upgrades narrow', 'Downgrades cascade'] },
+    { id: 'coin1', name: { in: 'GST & e-way bills', us: 'Coincident index (CEI)' }, sub: { in: 'Collections and e-way bill generation, year on year', us: 'Conference Board coincident economic index' }, w: 1, coin: true, opts: ['Bottoming, turning up', 'Strong, broad growth', 'Still high but slowing', 'Falling or contracting'] },
+    { id: 'coin2', name: { in: 'IIP & core sector', us: 'Payrolls' }, sub: { in: 'Industrial production and eight core industries', us: 'Nonfarm payroll growth, 3-month average' }, w: 1, coin: true, opts: ['Bottoming, turning up', 'Strong, broad growth', 'Still high but slowing', 'Falling or contracting'] },
+    { id: 'coin3', name: { in: 'Power, freight & tolls', us: 'Industrial production' }, sub: { in: 'Power demand, rail freight, toll collections', us: 'Fed industrial production index' }, w: 1, coin: true, opts: ['Bottoming, turning up', 'Strong, broad growth', 'Still high but slowing', 'Falling or contracting'] },
     { id: 'infl', name: 'Inflation (lag)', sub: 'CPI, services CPI · never a trigger', w: 1, lag: true, opts: ['Low or falling', 'Moderate, stable', 'Rising, above target', 'Peaking then falling'] },
   ];
+  const N_LEAD = SIGNALS.filter(s => s.lead).length;
+  const N_SCORED = SIGNALS.filter(s => !s.lag).length;
+  const MIN_LEAD = 3, HYST = 0.15, ACTIVE = 20;
   const SECTORS = {
     0: { over: ['Banks & NBFCs', 'Autos', 'Real estate', 'Consumer discretionary', 'Industrials', 'Small & midcaps', 'Metals'], under: ['FMCG, pharma, utilities (they lag)', 'Cash'], why: 'Rate-sensitives and operating leverage recover first; credit costs fall; beta pays.' },
     1: { over: ['Capital goods & infrastructure', 'Banks (credit growth)', 'IT & global cyclicals', 'Manufacturing', 'Power / energy capex', 'Selective mid-caps'], under: ['Deep defensives', 'Long-duration bonds'], why: 'Capex cycle broadens; earnings breadth widest; corrections shallow.' },
@@ -108,36 +140,65 @@ import Base from '../../layouts/Base.astro';
     2: [['Energy & commodities', 'OILIETF · COMMOIETF · SILVERBEES'], ['Staples & health', 'FMCGIETF · CONSUMBEES · PHARMABEES · HEALTHIETF'], ['Factor rotation', 'LOWVOLIETF · QUAL30IETF · NV20IETF replace momentum'], ['Gold up-weight', 'GOLDBEES · SGB']],
     3: [['Capital preservation', 'LIQUIDBEES · GILT5YBEES · LTGILTBEES · Bharat Bond'], ['Defensive equity', 'FMCG · pharma · gold · low-vol'], ['Trough accumulation list', 'bank, auto, midcap ETFs — bought while leads trough']],
   };
-  const AUG26 = { in: { lei: 1, pmi: 2, credit: 1, curve: 0, val: 1, policy: 1, earn: 1, infl: 2 }, us: { lei: 0, pmi: 1, credit: 2, curve: 1, val: 2, policy: 3, earn: 2, infl: 2 }, ov: { ov_crude: false, ov_pmi: false, ov_claims: false, ov_fpi: false, ov_draw5: false, ov_draw10: false } };
+  const OVS = ['ov_crude', 'ov_pmi', 'ov_claims', 'ov_fpi', 'ov_draw5', 'ov_draw10'];
   const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const thisMonth = () => new Date().toISOString().slice(0, 7);
+  let PRESET = null, REF = null;
+  const label = (v, key) => typeof v === 'object' ? v[key] : v;
 
-  function renderPanel(id, title, sub) {
-    $(id).innerHTML = `<h2>${title} <small>${sub}</small></h2>` + SIGNALS.map(s => `<div class="sig"><div class="name">${s.name}<small>${s.sub}${s.lead ? ' · lead' : s.lag ? ' · lag' : ''} · weight ${s.w}</small></div><div class="opts" role="radiogroup" aria-label="${s.name} ${title}">${s.opts.map((o, k) => `<label><input type="radio" name="${id}_${s.id}" value="${k}">${o}</label>`).join('')}</div></div>`).join('') + `<div class="reading" id="${id}_reading"></div>`;
+  function renderPanel(id, key, title, sub) {
+    $(id).innerHTML = `<h2>${title} <small>${sub}</small></h2>` + SIGNALS.map(s => `<div class="sig"><div class="name">${label(s.name, key)}<small>${label(s.sub, key)}${s.lead ? ' · lead' : s.lag ? ' · lag' : s.coin ? ' · coincident' : ''} · weight ${s.w}</small></div><div class="opts" role="radiogroup" aria-label="${label(s.name, key)} ${title}">${s.opts.map((o, k) => `<label><input type="radio" name="${id}_${s.id}" value="${k}">${o}</label>`).join('')}</div></div>`).join('') + `<div class="reading" id="${id}_reading"></div>`;
   }
-  function score(id) {
-    const sc = [0, 0, 0, 0]; let tot = 0, n = 0;
-    for (const s of SIGNALS) { const v = document.querySelector(`input[name="${id}_${s.id}"]:checked`); if (v) { sc[+v.value] += s.w; tot += s.w; n++; } }
+  // overlays: crude shifts India one phase later; PMI (India) and claims/ISM (US) cap confidence at Medium
+  function score(id, key) {
+    const sc = [0, 0, 0, 0]; let tot = 0, n = 0, nLead = 0, infl = null;
+    for (const s of SIGNALS) {
+      const v = document.querySelector(`input[name="${id}_${s.id}"]:checked`);
+      if (!v) continue;
+      if (s.lag) { infl = +v.value; continue; }
+      sc[+v.value] += s.w; tot += s.w; n++; if (s.lead) nLead++;
+    }
     if (!n) return null;
-    const order = [...sc.keys()].sort((a, b) => sc[b] - sc[a]);
-    const margin = (sc[order[0]] - sc[order[1]]) / tot;
-    const conf = margin < 0.15 ? 'Low' : margin < 0.35 ? 'Medium' : 'High';
-    return { sc, tot, n, top: order[0], second: order[1], margin, conf, mult: conf === 'High' ? 1 : conf === 'Medium' ? 0.6 : 0.3 };
+    let order = [...sc.keys()].sort((a, b) => sc[b] - sc[a] || (infl === b) - (infl === a));
+    let top = order[0];
+    const tie = sc[order[0]] === sc[order[1]];
+    const notes = [];
+    if (tie && infl !== null && (infl === order[0] || infl === order[1])) notes.push('Tie broken by the inflation signal.');
+    const raw = (sc[order[0]] - sc[order[1]]) / tot;
+    let margin = raw * n / N_SCORED;
+    if (key === 'in' && $('ov_crude').checked) { top = (top + 1) % 4; notes.push('Crude overlay: reading moved one phase later.'); }
+    let conf = margin < 0.15 ? 'Low' : margin < 0.35 ? 'Medium' : 'High';
+    const capped = (key === 'in' && $('ov_pmi').checked) || (key === 'us' && $('ov_claims').checked);
+    if (capped && conf === 'High') { conf = 'Medium'; notes.push('Overlay caps confidence at Medium.'); }
+    // hysteresis against the reading saved in an earlier month
+    const ref = REF && REF[key];
+    if (ref != null && ref !== top && (sc[top] - sc[ref]) / tot < HYST) { notes.push(`Hysteresis: holding last month's ${PHASES[ref].toLowerCase()} until the new phase leads by 15%.`); top = ref; }
+    if (infl !== null) notes.push(infl === top ? 'Inflation confirms the phase.' : `Inflation reads ${PHASES[infl].toLowerCase()}, so it does not confirm yet.`);
+    const second = [...sc.keys()].filter(k => k !== top).sort((a, b) => sc[b] - sc[a])[0];
+    return { sc, tot, n, nLead, top, second, margin, conf, insufficient: nLead < MIN_LEAD, notes, mult: conf === 'High' ? 1 : conf === 'Medium' ? 0.6 : 0.3 };
   }
   function renderReading(id, r) {
     const el = $(`${id}_reading`);
     if (!r) { el.innerHTML = '<p style="color:var(--ink-3);font-size:.9rem">Score at least one signal to get a reading.</p>'; return; }
-    el.innerHTML = PHASES.map((p, k) => `<div class="phase ${k === r.top && r.conf !== 'Low' ? 'win' : ''}"><div class="s">${p}</div><div class="v">${(100 * r.sc[k] / r.tot).toFixed(0)}%</div><div class="bar"><i style="width:${100 * r.sc[k] / r.tot}%"></i></div></div>`).join('') +
-      `<div style="grid-column:1/-1"><div class="verdict">${r.conf === 'Low' ? 'Mixed — leaning ' + PHASES[r.top].toLowerCase() : PHASES[r.top]}</div><div class="conf">Confidence ${r.conf} (margin ${(100 * r.margin).toFixed(0)}% over ${PHASES[r.second].toLowerCase()}, ${r.n} of 8 signals scored). Tilt multiplier ${r.mult}×.</div></div>`;
+    const win = k => k === r.top && r.conf !== 'Low' && !r.insufficient;
+    el.innerHTML = PHASES.map((p, k) => `<div class="phase ${win(k) ? 'win' : ''}"><div class="s">${p}</div><div class="v">${(100 * r.sc[k] / r.tot).toFixed(0)}%</div><div class="bar"><i style="width:${100 * r.sc[k] / r.tot}%"></i></div></div>`).join('') +
+      (r.insufficient
+        ? `<div style="grid-column:1/-1"><div class="verdict">Insufficient evidence</div><div class="conf">Score at least ${MIN_LEAD} of the ${N_LEAD} leading signals before a phase is declared (${r.nLead} scored).</div></div>`
+        : `<div style="grid-column:1/-1"><div class="verdict">${r.conf === 'Low' ? 'Mixed — leaning ' + PHASES[r.top].toLowerCase() : PHASES[r.top]}</div><div class="conf">Confidence ${r.conf} (margin ${(100 * r.margin).toFixed(0)}% over ${PHASES[r.second].toLowerCase()} after scaling for coverage, ${r.n} of ${N_SCORED} signals scored). Tilt multiplier ${r.mult}×.</div>${r.notes.length ? `<div class="conf" style="margin-top:4px;color:var(--ink-3)">${r.notes.join(' ')}</div>` : ''}</div>`);
   }
   function renderPrescription(rin, rus) {
     const el = $('prescription');
     if (!rin) { el.innerHTML = '<h2>Prescription</h2><p style="color:var(--ink-3)">Score the India panel to see sector tilts and the ETF menu.</p>'; return; }
+    if (rin.insufficient) { el.innerHTML = `<h2>Prescription</h2><p style="color:var(--ink-3)">Score at least ${MIN_LEAD} of the ${N_LEAD} leading signals for India to see sector tilts. Until then, hold the core: broad-market index, gold and cash.</p>`; return; }
     const p = rin.top, S = SECTORS[p];
-    const usNote = rus ? (rus.top >= 2 && p <= 1 ? `<div class="flag warn">US reads <b>${PHASES[rus.top].toLowerCase()}</b> while India reads ${PHASES[p].toLowerCase()}: US late-cycle stress reaches Indian equities through flows and oil long before it reaches Indian GDP. Run a barbell: domestic cyclical core (banks first) balanced by a real defensive sleeve (pharma, FMCG, gold) and quality / low-vol instead of momentum for incremental mid- and small-cap exposure. Keep IT and US-tech ETFs for easing optionality.</div>` : `<div class="flag ok">US reads ${PHASES[rus.top].toLowerCase()}; no adverse overlay from the US cycle on the Indian reading.</div>`) : '';
+    const usNote = rus && !rus.insufficient ? (rus.top >= 2 && p <= 1 ? `<div class="flag warn">US reads <b>${PHASES[rus.top].toLowerCase()}</b> while India reads ${PHASES[p].toLowerCase()}: US late-cycle stress reaches Indian equities through flows and oil long before it reaches Indian GDP. Run a barbell: domestic cyclical core (banks first) balanced by a real defensive sleeve (pharma, FMCG, gold) and quality / low-vol instead of momentum for incremental mid- and small-cap exposure. Keep IT and US-tech ETFs for easing optionality.</div>` : `<div class="flag ok">US reads ${PHASES[rus.top].toLowerCase()}; no adverse overlay from the US cycle on the Indian reading.</div>`) : '';
     const mixed = rin.conf === 'Low' ? `<div class="flag warn">Low confidence: the evidence is mixed. Scale every tilt by ${rin.mult}× and lean on the core (broad-market index + gold + cash) rather than a directional sector bet.</div>` : '';
+    const ow = ACTIVE * rin.mult / S.over.length, uw = ACTIVE * rin.mult / S.under.length;
     el.innerHTML = `<h2>Prescription for India · ${PHASES[p]} <small>tilts scaled ${rin.mult}× by confidence</small></h2>${mixed}${usNote}
       <p style="font-size:.95rem;color:var(--ink-2);margin:10px 0">${S.why} Own what benefits from the <em>next</em> 6–12 months of the cycle, not the last 6. Macro is a lean, never a veto.</p>
-      <div class="cols"><div><h3>Overweight (in order)</h3><ul>${S.over.map(x => `<li>${x}</li>`).join('')}</ul></div><div><h3>Underweight / avoid</h3><ul>${S.under.map(x => `<li>${x}</li>`).join('')}</ul></div></div>
+      <p style="font-size:.9rem;color:var(--ink-2);margin:0 0 10px">Sizing: around a core of broad index, gold and cash, the overweights share a +${ACTIVE}% active budget and the underweights a −${ACTIVE}% budget, both scaled by the ${rin.mult}× confidence multiplier.</p>
+      <div class="cols"><div><h3>Overweight (in order)</h3><ul>${S.over.map(x => `<li>${x}<span class="tilt">+${ow.toFixed(1)}%</span></li>`).join('')}</ul></div><div><h3>Underweight / avoid</h3><ul>${S.under.map(x => `<li>${x}<span class="tilt">−${uw.toFixed(1)}%</span></li>`).join('')}</ul></div></div>
       <h3 style="margin-top:16px;font-size:1rem">NSE ETF menu</h3>
       <div class="etf">${ETFS.core.map(x => `<div><b>Core · ${x[0]}</b><span>${x[1]}</span></div>`).join('')}${ETFS[p].map(x => `<div><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div>
       <p style="font-size:.8rem;color:var(--ink-3);margin-top:8px">Tickers are representative; equivalents from other AMCs are interchangeable. Choose on expense ratio, AUM and tracking error, and check bid-ask spread before sizing.</p>
@@ -146,26 +207,86 @@ import Base from '../../layouts/Base.astro';
   }
   function renderOverlay() {
     const f = [];
-    if ($('ov_crude').checked) f.push(['warn', 'Crude overlay: treat the Indian reading as one notch later in the cycle; add to energy and gold, trim rate-sensitives.']);
-    if ($('ov_pmi').checked) f.push(['warn', 'Decelerate rule triggered (India PMI < 52 for two months): pause tranches and let the defensive sleeve work.']);
-    if ($('ov_claims').checked) f.push(['warn', 'Decelerate rule triggered (US claims / ISM): pause tranches; US flows and oil are the transmission channels.']);
+    if ($('ov_crude').checked) f.push(['warn', 'Crude overlay: the Indian reading is moved one phase later; add to energy and gold, trim rate-sensitives.']);
+    if ($('ov_pmi').checked) f.push(['warn', 'Decelerate rule triggered (India PMI < 52 for two months): India confidence capped at Medium; pause tranches and let the defensive sleeve work.']);
+    if ($('ov_claims').checked) f.push(['warn', 'Decelerate rule triggered (US claims / ISM): US confidence capped at Medium; pause tranches, since US flows and oil are the transmission channels.']);
     if ($('ov_fpi').checked) f.push(['warn', 'External flow stress: favour domestically funded, under-owned sectors (banks) over FPI-crowded names.']);
     if ($('ov_draw10').checked) f.push(['ok', 'Accelerate rule: a 10% drawdown pulls two tranches forward.']);
     else if ($('ov_draw5').checked) f.push(['ok', 'Accelerate rule: a 5% drawdown pulls the next tranche forward.']);
     $('overlayOut').innerHTML = f.length ? f.map(x => `<div class="flag ${x[0]}">${x[1]}</div>`).join('') : '<div class="flag ok" style="margin-top:8px">No overlay flags set.</div>';
   }
-  function update() { const rin = score('panel-in'), rus = score('panel-us'); renderReading('panel-in', rin); renderReading('panel-us', rus); renderPrescription(rin, rus); renderOverlay(); save(); }
-  function setAll(state) { for (const [pid, key] of [['panel-in', 'in'], ['panel-us', 'us']]) for (const s of SIGNALS) { const v = state[key] && state[key][s.id]; document.querySelectorAll(`input[name="${pid}_${s.id}"]`).forEach(i => i.checked = v != null && +i.value === v); } for (const k in state.ov || {}) if ($(k)) $(k).checked = !!state.ov[k]; update(); }
-  function getState() { const st = { in: {}, us: {}, ov: {} }; for (const [pid, key] of [['panel-in', 'in'], ['panel-us', 'us']]) for (const s of SIGNALS) { const v = document.querySelector(`input[name="${pid}_${s.id}"]:checked`); if (v) st[key][s.id] = +v.value; } ['ov_crude', 'ov_pmi', 'ov_claims', 'ov_fpi', 'ov_draw5', 'ov_draw10'].forEach(k => st.ov[k] = $(k).checked); return st; }
-  function save() { try { localStorage.setItem('cycle-compass', JSON.stringify(getState())); } catch (e) {} }
+  let LAST = { in: null, us: null };
+  function update() { const rin = score('panel-in', 'in'), rus = score('panel-us', 'us'); LAST = { in: rin, us: rus }; renderReading('panel-in', rin); renderReading('panel-us', rus); renderPrescription(rin, rus); renderOverlay(); renderAgreement(); save(); }
+  function setAll(state) { for (const [pid, key] of [['panel-in', 'in'], ['panel-us', 'us']]) for (const s of SIGNALS) { const v = state[key] && state[key][s.id]; document.querySelectorAll(`input[name="${pid}_${s.id}"]`).forEach(i => i.checked = v != null && +i.value === v); } for (const k of OVS) if ($(k)) $(k).checked = !!(state.ov && state.ov[k]); update(); }
+  function getState() { const st = { in: {}, us: {}, ov: {} }; for (const [pid, key] of [['panel-in', 'in'], ['panel-us', 'us']]) for (const s of SIGNALS) { const v = document.querySelector(`input[name="${pid}_${s.id}"]:checked`); if (v) st[key][s.id] = +v.value; } OVS.forEach(k => st.ov[k] = $(k).checked); return st; }
+  function save() {
+    try {
+      localStorage.setItem('cycle-compass', JSON.stringify(getState()));
+      const ok = r => r && !r.insufficient ? r.top : null;
+      localStorage.setItem('cycle-compass-phase', JSON.stringify({ month: thisMonth(), in: ok(LAST.in), us: ok(LAST.us) }));
+    } catch (e) {}
+  }
+  function loadRef() {
+    try {
+      const cur = JSON.parse(localStorage.getItem('cycle-compass-phase') || 'null');
+      let ref = JSON.parse(localStorage.getItem('cycle-compass-ref') || 'null');
+      if (cur && cur.month < thisMonth()) { ref = cur; localStorage.setItem('cycle-compass-ref', JSON.stringify(ref)); }
+      REF = ref && ref.month < thisMonth() ? ref : null;
+    } catch (e) { REF = null; }
+  }
 
-  renderPanel('panel-in', 'India', 'no official LEI: assemble it from PMI, OECD CLI, credit, capex, autos, GST');
-  renderPanel('panel-us', 'United States', 'Conference Board LEI / CEI / LAG, ISM, claims, curve');
+  // ---------------- model reading (written monthly by the regime model; hidden until real data exists)
+  let MODEL = null;
+  const fmtMonth = m => { const [y, mo] = m.split('-'); return new Date(+y, +mo - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' }); };
+  function probBars(pr) { return PHASES.map(p => `<div class="prob"><span>${p}</span><div class="bar"><i style="width:${(100 * (pr[p] || 0)).toFixed(0)}%"></i></div><b>${(100 * (pr[p] || 0)).toFixed(0)}%</b></div>`).join(''); }
+  function renderAgreement() {
+    const el = $('agree'); if (!el || !MODEL) return;
+    const r = LAST.in;
+    if (!r || r.insufficient) { el.innerHTML = ''; return; }
+    const mp = PHASES.indexOf(MODEL.india.phase);
+    el.innerHTML = mp === r.top ? `<div class="flag ok">Your India reading agrees with the model: ${PHASES[mp].toLowerCase()}.</div>` : `<div class="flag warn">Your India reading (${PHASES[r.top].toLowerCase()}) differs from the model (${PHASES[mp].toLowerCase()}). Check which signals drive the gap.</div>`;
+  }
+  function renderModel(M) {
+    const el = $('model');
+    const tl = M.timeline || [];
+    const step = Math.max(1, Math.floor(tl.length / 6));
+    const ticks = tl.filter((_, i) => i % step === 0).map(t => t.m.slice(0, 4));
+    const sc = (M.scorecard || []).slice(0, 8);
+    el.innerHTML = `<h2>Model reading <small>regime model on Indian and US macro data · as of ${fmtMonth(M.as_of)}</small></h2>
+      <div class="mgrid">
+        <div><h3 style="font-size:1rem;margin:4px 0">India · ${esc(M.india.phase)} <span class="tilt">confidence ${esc(M.india.confidence)} · ${M.india.months_in_phase} months in phase${M.india.exit_prob != null ? ` · ${Math.round(100 * M.india.exit_prob)}% chance of leaving next month` : ''}</span></h3>${probBars(M.india.probs)}</div>
+        <div>${M.us ? `<h3 style="font-size:1rem;margin:4px 0">United States · ${esc(M.us.phase)} <span class="tilt">confidence ${esc(M.us.confidence)}</span></h3>${probBars(M.us.probs)}` : ''}</div>
+      </div>
+      <div id="agree"></div>
+      <h3 style="font-size:1rem;margin:16px 0 0">India regime history</h3>
+      <div class="timeline" role="img" aria-label="Model phase by month">${tl.map(t => `<i class="ph${t.p}" title="${t.m}: ${PHASES[t.p]}"></i>`).join('')}</div>
+      <div class="tl-axis">${ticks.map(t => `<span>${t}</span>`).join('')}</div>
+      <div class="key">${PHASES.map((p, k) => `<span><i class="ph${k}"></i>${p}</span>`).join('')}</div>
+      <h3 style="font-size:1rem;margin:16px 0 4px">This month's sectors</h3>
+      <div class="picks">${(M.picks || []).map((p, i) => `<div class="pick"><div class="rk">${i + 1}</div><div><b>${esc(p.sector)}${p.etf ? ` <span class="tilt">${esc(p.etf)}</span>` : ''}</b><span>${p.reasons.length ? 'Main reasons: ' + p.reasons.map(esc).join('; ') : ''}</span></div></div>`).join('')}</div>
+      ${sc.length ? `<h3 style="font-size:1rem;margin:16px 0 4px">Track record <span class="tilt">out of sample 2013–2022, after costs; gates from the five-gate pass test</span></h3>
+      <div class="scwrap"><table class="sc"><thead><tr><th>Strategy</th><th>Basket</th><th class="n">vs Nifty 50</th><th class="n">vs equal-weight</th><th class="n">IR</th><th>Gates 1–5</th></tr></thead><tbody>${sc.map(r => `<tr><td>${esc(r.strategy)} · ${esc(r.name)}</td><td>Top ${r.top_n}, ${esc(r.rebalance)}</td><td class="n">${r.excess_vs_n50 >= 0 ? '+' : ''}${r.excess_vs_n50.toFixed(1)} pts</td><td class="n">${r.excess_vs_ew >= 0 ? '+' : ''}${r.excess_vs_ew.toFixed(1)} pts</td><td class="n">${r.ir.toFixed(2)}</td><td>${r.gates.map(g => g ? '✓' : '✗').join(' ')}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      <p style="font-size:.8rem;color:var(--ink-3);margin-top:8px">Research output from a statistical regime model and a sector ranker trained only on data available at each date. Past backtest results do not guarantee future returns.</p>`;
+    el.hidden = false;
+    renderAgreement();
+  }
+
+  renderPanel('panel-in', 'in', 'India', 'no official LEI: assemble it from PMI, OECD CLI, credit, capex, autos, GST');
+  renderPanel('panel-us', 'us', 'United States', 'Conference Board LEI / CEI / LAG, ISM, claims, curve');
   document.querySelectorAll('.cc input').forEach(i => i.addEventListener('change', update));
-  $('presetAug26').onclick = () => setAll(AUG26);
+  $('presetBtn').onclick = () => PRESET && setAll(PRESET);
   $('clearAll').onclick = () => setAll({ in: {}, us: {}, ov: {} });
-  $('copyLink').onclick = () => { const st = getState(); const rin = score('panel-in'), rus = score('panel-us'); const txt = `Cycle Compass reading (${new Date().toISOString().slice(0, 10)})\nIndia: ${rin ? PHASES[rin.top] + ' · confidence ' + rin.conf : 'not scored'}\nUS: ${rus ? PHASES[rus.top] + ' · confidence ' + rus.conf : 'not scored'}\n` + JSON.stringify(st); navigator.clipboard && navigator.clipboard.writeText(txt).then(() => { $('copyLink').textContent = 'Copied'; setTimeout(() => $('copyLink').textContent = 'Copy my reading', 1500); }).catch(() => {}); };
+  $('copyLink').onclick = () => { const st = getState(); const rin = LAST.in, rus = LAST.us; const say = r => !r ? 'not scored' : r.insufficient ? 'insufficient evidence' : PHASES[r.top] + ' · confidence ' + r.conf; const txt = `Cycle Compass reading (${new Date().toISOString().slice(0, 10)})\nIndia: ${say(rin)}\nUS: ${say(rus)}\n` + JSON.stringify(st); navigator.clipboard && navigator.clipboard.writeText(txt).then(() => { $('copyLink').textContent = 'Copied'; setTimeout(() => $('copyLink').textContent = 'Copy my reading', 1500); }).catch(() => {}); };
+  loadRef();
   let saved = null; try { saved = JSON.parse(localStorage.getItem('cycle-compass') || 'null'); } catch (e) {}
-  setAll(saved && (Object.keys(saved.in).length || Object.keys(saved.us).length) ? saved : AUG26);
+  const hasSaved = saved && saved.in && (Object.keys(saved.in).length || Object.keys(saved.us || {}).length);
+  setAll(hasSaved ? saved : { in: {}, us: {}, ov: {} });
+  fetch('/apps/cycle-compass/preset.json').then(r => r.json()).then(p => {
+    PRESET = p.reading;
+    $('presetBtn').textContent = `Load the ${fmtMonth(p.as_of)} read`;
+    $('asof').textContent = `Author's reading as of ${fmtMonth(p.as_of)}${hasSaved ? ' · showing your saved reading' : ''}`;
+    if (!hasSaved) setAll(PRESET);
+  }).catch(() => { $('presetBtn').hidden = true; });
+  fetch('/apps/cycle-compass/model.json').then(r => r.ok ? r.json() : null).then(M => { if (M && !M.synthetic && M.india) { MODEL = M; renderModel(M); } }).catch(() => {});
   </script>
 </Base>

@@ -1,0 +1,9 @@
+{
+  "as_of": "2026-08",
+  "note": "Author's manual Cycle Compass reading. Signal values are option indexes 0-3 (Early recovery, Mid expansion, Late cycle, Contraction descriptions). Update monthly.",
+  "reading": {
+    "in": { "lei": 1, "pmi": 2, "credit": 1, "curve": 0, "val": 1, "policy": 1, "earn": 1, "infl": 2 },
+    "us": { "lei": 0, "pmi": 1, "credit": 2, "curve": 1, "val": 2, "policy": 3, "earn": 2, "infl": 2 },
+    "ov": { "ov_crude": false, "ov_pmi": false, "ov_claims": false, "ov_fpi": false, "ov_draw5": false, "ov_draw10": false }
+  }
+}
