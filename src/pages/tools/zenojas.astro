@@ -115,7 +115,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
         <div><span>CAGR gap, 95% CI</span><b>14.5–45.5 pp</b></div>
         <div><span>Deflated Sharpe (15 trials)</span><b>0.994</b></div>
       </div>
-      <div class="warn" style="margin-top:14px">Caveats: the choice of XGBoost was informed by the same test window (selection bias; a walk-forward re-test with a separate validation window is in progress). Returns are a backtest, gross unless stated; survivorship and the point-in-time universe are not fully audited. The book has high beta and a strong small/mid-cap tilt (much of the return is size, not selection). Not investment advice. Full detail in the <a href="#" data-goto="card">model card</a>.</div>
+      <div class="warn" style="margin-top:14px">Caveats: a walk-forward re-test (re-trained every quarter) gives about 62% a year for 2021–26, but the tabular models are statistically tied and most of the edge is 12-month momentum. The training label refers to the quarter just ended, so precision@30 overstates skill. Returns are a backtest, gross unless stated, on a survivors-only universe, so compare with the equal-weight universe rather than the NIFTY 50. The book has high beta and a strong small/mid-cap tilt (much of the return is size, not selection). Not investment advice. Full detail in the <a href="#" data-goto="card">model card</a>.</div>
     </div>
 
     <div class="warn">The portfolio, ranked universe, backtest and diagnostics tabs below come from the <b>earlier BiLSTM v1 scoring run</b> (outputs file not yet regenerated). XGBoost picks will replace them after the next scoring run; until then, read them as the superseded model's output.</div>

@@ -48,7 +48,7 @@ The model answers one narrow question: *is this stock likely to finish in the to
 
 **Where the return comes from.** A five-factor regression (market, size = equal-weight universe minus NIFTY 50, value, momentum, quality) leaves XGBoost an alpha of 30.6% a year (t = 2.44, p = 0.03, R² = 0.72), but its size beta is 1.25: a large part of the headline return is a small/mid-cap tilt that 2021–24 rewarded. The BiLSTM's alpha is 10.6% (t = 1.21), not significant.
 
-**Caveats.** The choice of XGBoost was informed by the same test window, so the result carries selection bias; a walk-forward re-test with a separate validation window is in progress. Returns are a backtest, gross unless stated, and survivorship and the point-in-time universe have not been fully audited. The book has high beta and a strong size tilt.
+**Caveats.** The choice of XGBoost was informed by the same test window. A walk-forward re-test, re-trained every quarter, confirms the out-of-sample result (about 62% a year for 2021–26, rank IC 0.092) but shows the tabular models are statistically tied and that ranking by trailing 12-month return alone captures most of the edge. The training label refers to the quarter just ended rather than the holding quarter, so precision figures overstate skill. Returns are a backtest, gross unless stated, on a survivors-only universe; the equal-weight universe is the fair benchmark. The book has high beta and a strong size tilt.
 
 ## 4. The comparison protocol: does the network earn its complexity?
 

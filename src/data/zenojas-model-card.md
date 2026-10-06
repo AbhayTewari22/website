@@ -2,7 +2,7 @@
 
 **Status.** XGBoost is now the first-choice ZENOJAS stock-selection model. It replaces the BiLSTM v1 as the headline ranker after a like-for-like comparison on the same data, features, split and portfolio rule (see *Why not BiLSTM* below). The portfolio, ranked-universe and predicted-stock tables elsewhere on this site were produced by the earlier BiLSTM run and are labelled as such; XGBoost picks will replace them after the next scoring run.
 
-**What it does.** Each quarter the model scores every stock in a ~940-name NSE universe with the probability that its price return over the *next* quarter will rank in the top 200 of the universe. The 30 highest-probability names form an equal-weight portfolio, rebalanced quarterly. Only the ordering of the scores matters.
+**What it does.** Each quarter the model scores every stock in a ~940-name NSE universe with the probability that it belongs to the top 200 of the universe. (The audit below found that this training label refers to the quarter just ended, not the holding quarter, so in practice the model ranks mainly on momentum.) The 30 highest-probability names form an equal-weight portfolio, rebalanced quarterly. Only the ordering of the scores matters.
 
 **Learner.** Gradient-boosted decision trees (XGBoost), deliberately shallow and heavily regularised because the training set is small for financial data and the base rate is low: maximum tree depth 3, at least 50 samples per leaf, random seed 42. No ticker embedding, so the model can score names it never saw in training (IPOs since 2020).
 
@@ -12,7 +12,7 @@
 
 **Target.** 1 if the stock's next-quarter return rank is ≤ 200, else 0.
 
-**Primary metrics.** Signal quality first: mean quarterly **rank IC** (Spearman correlation of score with next-quarter return across the whole universe) and **precision@30** (share of the top 30 that land in the top 200). Portfolio returns come second, because a 30-name book over 21 quarters can outperform by luck or by factor tilt.
+**Primary metrics.** Signal quality first: mean quarterly **rank IC** (Spearman correlation of score with next-quarter return across the whole universe) and **precision@30** (share of the top 30 that land in the top 200; see the audit below for which top 200). Portfolio returns come second, because a 30-name book over 21 quarters can outperform by luck or by factor tilt.
 
 ### Out-of-sample record (21 quarters, Mar-2021 → Mar-2026, top 30, equal weight, gross, rf 6.5%)
 
@@ -37,7 +37,31 @@
 | BiLSTM v1 | In-sample 2005–2020 (64 q) | 129.4% | 0.246 | 0.60 |
 | BiLSTM v1 | Out-of-sample 2021–2026 (21 q) | 36.4% | 0.009 | 0.34 |
 
-XGBoost's rank IC and return hold up out of sample (precision@30 falls from 0.80 to 0.68 but stays well above the ~0.21 base rate). The BiLSTM's do not.
+XGBoost's rank IC and return hold up out of sample. The BiLSTM's do not. Precision@30 in this table is measured against the workbook label and overstates skill (see the audit below).
+
+### Walk-forward test and audit (October 2026)
+
+Every model was re-trained each quarter on an expanding window (training data ending two quarters before each scoring date, transforms re-fitted each time) and scored on the next quarter only.
+
+| Model or reference | CAGR 2012–26 | Rank IC 2012–26 (t) | CAGR 2021–26 | Rank IC 2021–26 (t) | Precision@30 vs actual top 200, 2021–26 |
+|---|---:|---:|---:|---:|---:|
+| XGBoost | 60.4% | 0.084 (5.8) | 61.8% | 0.092 (5.0) | 35.7% |
+| Logistic Regression | 59.4% | 0.082 (5.5) | 65.4% | 0.097 (5.4) | 36.2% |
+| Random Forest | 64.0% | 0.082 (5.8) | 66.6% | 0.089 (4.8) | 37.0% |
+| LightGBM | 63.2% | 0.083 (5.7) | 62.6% | 0.091 (4.9) | 34.9% |
+| Rank by trailing 12-month return (no model) | 58.9% | 0.081 (4.3) | 57.8% | 0.092 (5.0) | 35.2% |
+| Equal-weight universe | 26.8% | – | 25.5% | – | 24.7% (base rate) |
+| NIFTY 50 | 12.2% | – | 8.6% | – | – |
+
+What this shows:
+
+- **Not a product of picking the model on the test window.** Walk-forward XGBoost earns about 62% a year for 2021–26, close to the fixed-split 64.9%.
+- **The tabular models are statistically tied.** Logistic Regression does as well as XGBoost. XGBoost is kept as the first choice for robustness and practicality (missing-data handling, exact SHAP explanations), not because it is demonstrably better.
+- **Most of the edge is momentum.** Ranking by the trailing 12-month return alone gets the same rank IC; the models add a few points of return on top.
+- **The training label is the quarter just ended.** The audit found that the workbook "top 200" label marks the best performers of the three months ending at the start of the holding period, not of the holding period. There is no look-ahead in the returns, but precision against that label (the 0.68 above) overstates skill; against the actual top 200 it is about 36%.
+- **The universe is survivors only.** All 485 stocks present in 2005 are still present in 2026, so absolute returns are inflated. Compare the models with the equal-weight universe, not the NIFTY 50.
+- **No skill in a crash.** Trained to June 2007 and tested over 2007–09, the models' rank IC was about zero and the portfolio tracked the universe down.
+
 
 ### Net of costs
 
@@ -58,7 +82,7 @@ The BiLSTM v1 (a learned ticker embedding plus 11 features through one bidirecti
 
 ### Caveats
 
-- **Selection bias.** The choice of XGBoost over the other tabular models was informed by the same 21-quarter test window, so its lead over Logistic Regression, LightGBM and Random Forest is not an independent test. A walk-forward re-test with a separate validation window is in progress.
-- **Backtest, not a track record.** Returns are simulated, gross of costs unless stated, price returns without dividends; survivorship and the point-in-time construction of the universe have not been fully audited.
+- **Selection bias.** The choice of XGBoost over the other tabular models was informed by the same 21-quarter test window, so its lead over Logistic Regression, LightGBM and Random Forest is not an independent test. The walk-forward test above confirms the result but shows the tabular models are tied.
+- **Backtest, not a track record.** Returns are simulated, gross of costs unless stated, price returns without dividends; the universe is not point-in-time and contains survivors only, which inflates absolute returns.
 - **Risk.** High beta (1.53 vs NIFTY 50) and a strong small/mid-cap tilt; liquidity and capacity for an institutional-sized book are not modelled. No sector constraints are applied.
 - **Research output, not investment advice.**
