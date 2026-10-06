@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import ZenojasNav from '../../components/ZenojasNav.astro';
 import { Content as ModelCard } from '../../data/zenojas-model-card.md';
 ---
-<Base title="ZENOJAS Stock Model" description="ZENOJAS BiLSTM v1: quarterly stock-selection scores for ~940 NSE stocks, the 25-name portfolio, out-of-sample backtest against the NIFTY 50 and Midcap 100, and candid diagnostics.">
+<Base title="ZENOJAS Stock Model" description="ZENOJAS XGBoost v2: quarterly stock-selection scores for ~940 NSE stocks, a 21-quarter out-of-sample backtest against the NIFTY 50, in-sample vs out-of-sample and net-of-cost checks, and candid caveats.">
   <style is:global>
     .zn { display: grid; gap: 22px; }
     .zn-head { padding-block: 40px 8px; max-width: 72ch; }
@@ -58,14 +58,15 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     <header class="zn-head">
       <div class="eyebrow">Tool · Machine-learning stock selection</div>
       <h1>ZENOJAS Stock Model</h1>
-      <p class="lede" style="color:var(--ink-2)">A Bidirectional LSTM scores every stock in a ~940-name NSE universe each quarter with the probability that its next-quarter return ranks in the top 200. The highest-probability names form an equal-weight portfolio. Everything on this page is a published model output; the model itself runs offline. New to this? Start with <a href="/tools/zenojas/how-it-works/">How it works</a>; the technical detail is in the <a href="/tools/zenojas/playbook/">Playbook</a>.</p>
+      <p class="lede" style="color:var(--ink-2)">A shallow, regularised XGBoost model (now the first-choice ZENOJAS ranker, replacing the earlier BiLSTM) scores every stock in a ~940-name NSE universe each quarter with the probability that its next-quarter return ranks in the top 200. The 30 highest-probability names form an equal-weight portfolio. Everything on this page is a published model output; the model itself runs offline. New to this? Start with <a href="/tools/zenojas/how-it-works/">How it works</a>; the technical detail is in the <a href="/tools/zenojas/playbook/">Playbook</a>.</p>
       <ZenojasNav current="model" />
+      <p style="font-size:.9rem;margin:6px 0 0">Also in this research programme: <a href="/tools/pricing-lab/">Catastrophe pricing lab (W-GAN + EVT) →</a></p>
       <div class="zn-stamp" id="stamp">loading model outputs…</div>
     </header>
 
     <div class="panel" style="padding:14px 18px">
       <div class="hl-controls">
-        <span class="eyebrow">Backtest window</span>
+        <span class="eyebrow">XGBoost backtest window</span>
         <label>Start quarter <select id="hl-start"></select></label>
         <label>Quarters <select id="hl-n"><option>8</option><option>12</option><option>15</option><option>16</option><option>17</option><option>20</option><option selected>21</option><option>24</option></select></label>
         <label>Portfolio <select id="hl-size"><option value="25">Top 25</option><option value="30" selected>Top 30</option><option value="50">Top 50</option></select></label>
@@ -76,14 +77,57 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
       <div class="kpis" id="headline" style="margin-top:12px"></div>
     </div>
 
+    <div class="panel">
+      <h2>Does it hold up?<small>out-of-sample 21 quarters, Mar-2021 → Mar-2026, top 30, equal weight</small></h2>
+      <div class="two">
+        <div>
+          <h3 style="font-size:1rem">In-sample vs out-of-sample</h3>
+          <div class="tablewrap" style="max-height:none"><table class="zt">
+            <thead><tr><th>Model</th><th>Window</th><th class="n">CAGR</th><th class="n">Rank IC</th><th class="n">Precision@30</th></tr></thead>
+            <tbody>
+              <tr><td><b>XGBoost</b></td><td>In-sample 2005–20</td><td class="n">60.4%</td><td class="n">0.091</td><td class="n">0.80</td></tr>
+              <tr><td><b>XGBoost</b></td><td>Out-of-sample 2021–26</td><td class="n">64.9%</td><td class="n">0.098</td><td class="n">0.68</td></tr>
+              <tr><td>BiLSTM v1</td><td>In-sample 2005–20</td><td class="n">129.4%</td><td class="n">0.246</td><td class="n">0.60</td></tr>
+              <tr><td>BiLSTM v1</td><td>Out-of-sample 2021–26</td><td class="n">36.4%</td><td class="n">0.009</td><td class="n">0.34</td></tr>
+            </tbody>
+          </table></div>
+          <p style="font-size:.85rem;color:var(--ink-2);margin-top:8px">XGBoost shows no decay out of sample. The BiLSTM's in-sample fit collapses: its ticker embedding memorised which stocks did well in 2005–2020.</p>
+        </div>
+        <div>
+          <h3 style="font-size:1rem">Net of costs</h3>
+          <div class="tablewrap" style="max-height:none"><table class="zt">
+            <thead><tr><th>Model</th><th class="n">Turnover / q</th><th class="n">Gross</th><th class="n">50 bp / side</th><th class="n">100 bp / side</th></tr></thead>
+            <tbody>
+              <tr><td><b>XGBoost</b></td><td class="n">61%</td><td class="n">64.9%</td><td class="n">61.3%</td><td class="n">57.7%</td></tr>
+              <tr><td>BiLSTM v1</td><td class="n">44%</td><td class="n">36.4%</td><td class="n">34.1%</td><td class="n">31.9%</td></tr>
+            </tbody>
+          </table></div>
+          <p style="font-size:.85rem;color:var(--ink-2);margin-top:8px">CAGR. Comparators (gross): Logistic 64.2%, LightGBM 61.9%, Random Forest 59.3%, universe equal-weight 25.5%, random ranking 24.4%, momentum rank 15.4%, NIFTY 50 8.6%.</p>
+        </div>
+      </div>
+      <div class="stats" style="margin-top:12px">
+        <div><span>Sharpe / Sortino</span><b>1.90 / 5.8</b></div>
+        <div><span>Max drawdown</span><b>−22.0%</b></div>
+        <div><span>Beta vs NIFTY 50</span><b>1.53</b></div>
+        <div><span>Five-factor alpha</span><b>30.6% (t 2.44)</b></div>
+        <div><span>Size beta</span><b>1.25</b></div>
+        <div><span>vs BiLSTM, per quarter</span><b>+5.5% (t 4.26)</b></div>
+        <div><span>CAGR gap, 95% CI</span><b>14.5–45.5 pp</b></div>
+        <div><span>Deflated Sharpe (15 trials)</span><b>0.994</b></div>
+      </div>
+      <div class="warn" style="margin-top:14px">Caveats: the choice of XGBoost was informed by the same test window (selection bias; a walk-forward re-test with a separate validation window is in progress). Returns are a backtest, gross unless stated; survivorship and the point-in-time universe are not fully audited. The book has high beta and a strong small/mid-cap tilt (much of the return is size, not selection). Not investment advice. Full detail in the <a href="#" data-goto="card">model card</a>.</div>
+    </div>
+
+    <div class="warn">The portfolio, ranked universe, backtest and diagnostics tabs below come from the <b>earlier BiLSTM v1 scoring run</b> (outputs file not yet regenerated). XGBoost picks will replace them after the next scoring run; until then, read them as the superseded model's output.</div>
+
     <div>
-      <div class="eyebrow" style="margin-bottom:8px">Latest scoring run · signal quality</div>
+      <div class="eyebrow" style="margin-bottom:8px">Latest scoring run (BiLSTM v1) · signal quality</div>
       <div class="kpis" id="kpis"></div>
     </div>
 
     <div class="panel">
       <div class="zn-tabs" role="tablist" id="tabs">
-        <button role="tab" aria-selected="true" data-tab="portfolio">Portfolio</button>
+        <button role="tab" aria-selected="true" data-tab="portfolio">Portfolio (BiLSTM v1)</button>
         <button role="tab" aria-selected="false" data-tab="universe">Ranked universe</button>
         <button role="tab" aria-selected="false" data-tab="backtest">Backtest</button>
         <button role="tab" aria-selected="false" data-tab="diag">Diagnostics</button>
@@ -92,7 +136,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
 
       <div class="tabpanel" id="tab-portfolio">
         <div class="two">
-          <div><h2>The 25 names<small id="asof"></small></h2><div class="tablewrap" style="max-height:620px"><table class="zt" id="ptable"></table></div></div>
+          <div><h2>The 25 names (BiLSTM v1)<small id="asof"></small></h2><div class="tablewrap" style="max-height:620px"><table class="zt" id="ptable"></table></div></div>
           <div>
             <h2>Size exposure vs universe</h2>
             <svg class="chart" id="cMcap" viewBox="0 0 520 200" role="img" aria-label="Portfolio market-cap band exposure versus universe"></svg>
@@ -131,7 +175,7 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
           </div>
         </div>
         <div class="warn" id="btnote"></div>
-        <p style="font-size:.9rem;color:var(--ink-2)">This tab shows the scoring run's 14-quarter series against the NIFTY Midcap 100. For any window from 2005 to 2025, other portfolio sizes and factor-index benchmarks, use the <a href="/tools/zenojas/explorer/">Backtest Explorer</a>.</p>
+        <p style="font-size:.9rem;color:var(--ink-2)">This tab shows the earlier BiLSTM v1 scoring run's 14-quarter series against the NIFTY Midcap 100. For any window from 2005 to 2025, other portfolio sizes and factor-index benchmarks, use the <a href="/tools/zenojas/explorer/">Backtest Explorer</a>.</p>
       </div>
 
       <div class="tabpanel" id="tab-diag" hidden>
@@ -147,6 +191,8 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
         <article class="prose prose-sm"><ModelCard /></article>
       </div>
     </div>
+
+    <article class="card tool"><div class="meta"><span>Also from this research programme · Reinsurance · Generative AI · EVT</span></div><h3><a href="/tools/pricing-lab/">Catastrophe pricing lab (W-GAN + EVT)</a></h3><p>Price catastrophe excess-of-loss layers for Indian flood, cyclone, earthquake and drought: a conditional Wasserstein GAN generates loss scenarios, a Generalized Pareto tail anchors the extremes, and an RBC-style capital charge sets the premium. The W-GAN models were trained with AI assistance (Claude) and are documented in the <a href="/blog/pricing-catastrophes-with-wgan-and-evt/">blog post on the method</a>.</p><p><a class="btn" href="/tools/pricing-lab/">Open the pricing lab</a></p></article>
 
     <p class="notice">Research output, not investment advice. The author is not a SEBI-registered investment adviser. Scores and portfolios are model artefacts with the limitations stated in the diagnostics and model card; past backtest performance does not predict future results.</p>
   </div>
@@ -233,20 +279,21 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     svgBars($('cFeat'), G.feature_importance_auc_drop, { horizontal: true, fmt: v => v.toFixed(3) });
     const C = G.confusion_at_0_5;
     $('cls').innerHTML = row('Hold-out AUC', G.test_auc, null, v => v.toFixed(3)) + row('Hold-out rows', G.test_rows, null, v => num(v)) + row('Mean rank IC', G.mean_rank_ic, null, v => v.toFixed(4)) + row(`Precision at ${C.threshold}`, C.precision) + row('Base rate', C.base_rate) + row('Positives flagged', C.positives_flagged, null, v => num(v));
-    $('dnote').textContent = 'Read these as the model card does: an AUC of 0.52, a rank IC near zero and non-monotonic decile returns mean the ranking signal is weak. The backtest outperformance rests on 14 quarters and a small-cap tilt; treat it as a hypothesis to test with more data, not as evidence of skill.';
+    $('dnote').textContent = 'These diagnostics are for the superseded BiLSTM v1 run. An AUC of 0.52, a rank IC near zero and non-monotonic decile returns mean its ranking signal is weak, which is why XGBoost replaced it as the first-choice model (see the model card). The backtest outperformance here rests on 14 quarters and a small-cap tilt; treat it as a hypothesis, not as evidence of skill.';
     renderUniverse();
   }
 
+  document.querySelectorAll('[data-goto]').forEach(a => a.onclick = e => { e.preventDefault(); const b = $('tabs').querySelector(`[data-tab="${a.dataset.goto}"]`); b && b.click(); $('tabs').scrollIntoView({ behavior: 'smooth' }); });
   $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { $('tabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b)); document.querySelectorAll('.zn .tabpanel').forEach(p => p.hidden = p.id !== 'tab-' + b.dataset.tab); });
   ['q', 'fband', 'fdec', 'fimp'].forEach(id => $(id).addEventListener('input', () => D && renderUniverse()));
   fetch('/apps/zenojas/outputs.json').then(r => r.json()).then(d => { D = d; render(); }).catch(e => { $('stamp').textContent = 'Could not load model outputs (' + e.message + ').'; });
 
-  // Headline: any window of the BiLSTM series, computed from the same file the Backtest Explorer uses.
-  let HB = null;
+  // Headline: any window of the XGBoost series (first-choice model), computed from the same file the Backtest Explorer uses.
+  let HB = null; const HEAD = 'xgboost';
   function renderHeadline() {
-    const B = HB, RF = B.meta.risk_free ?? 0.065, cut = B.models.bilstm.training_through || B.meta.training_through;
+    const B = HB, RF = B.meta.risk_free ?? 0.065, HM = B.models[HEAD] || B.models.bilstm, cut = HM.training_through || B.meta.training_through;
     const size = 'top' + $('hl-size').value, want = +$('hl-n').value, startIdx = +$('hl-start').value;
-    const sMap = Object.fromEntries(B.models.bilstm.series.map(s => [s.date, s]));
+    const sMap = Object.fromEntries(HM.series.map(s => [s.date, s]));
     const rows = B.quarters.slice(startIdx, startIdx + want).filter(q => sMap[q.date] && sMap[q.date][size] != null);
     const n = rows.length; if (n < 2) { $('headline').innerHTML = ''; return; }
     const yrs = n / 4, r = rows.map(q => sMap[q.date][size]), u = rows.map(q => q.universe_ew), bAll = rows.map(q => q.benchmarks?.nifty50), benchOK = bAll.every(v => v != null), b = benchOK ? bAll : null;
@@ -258,14 +305,14 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
     if (b) { const ex = r.map((x, i) => x - b[i]), X = b.map(v => v - RF / 4), Y = r.map(v => v - RF / 4), mx = mean(X), my = mean(Y); beta = X.reduce((s, v, i) => s + (v - mx) * (Y[i] - my), 0) / (n - 1) / sd(X) ** 2; alpha = (my - beta * mx) * 4; t = mean(ex) / (sd(ex) / Math.sqrt(n)); hit = ex.filter(v => v > 0).length / n; te = sd(ex) * 2; ir = te > 0 ? mean(ex) * 4 / te : NaN; }
     const nIn = rows.filter(q => q.date <= cut).length, cls = nIn ? 'insample' : '';
     const dl = d => new Date(d).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); $('hl-period').textContent = `scored ${dl(rows[0].date)} → ${dl(rows[n - 1].date)} · ${n} quarters${n < want ? ` (${want} requested; later quarters not yet realised)` : ''} · vs NIFTY 50`;
-    $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: the BiLSTM was trained through ${cut}, so returns before the Mar-2021 scoring date are flattered by outcomes the model had already seen. Start at Mar-2021 for the honest out-of-sample record.` : '';
+    $('hl-warn').hidden = !nIn; $('hl-warn').textContent = nIn ? `${nIn} of ${n} quarters are in-sample: ${HM.label} was trained through ${cut}, so returns before the Mar-2021 scoring date are flattered by outcomes the model had already seen. Start at Mar-2021 for the honest out-of-sample record.` : '';
     $('headline').innerHTML = [
-      ['Model CAGR', pct(cagr(r)), `${$('hl-size').selectedOptions[0].text.toLowerCase()}, equal weight, before costs`, 'primary'], ['NIFTY 50 CAGR', b ? pct(cagr(b)) : 'n/a', b ? `excess ${pct(cagr(r) - cagr(b))} p.a.` : 'benchmark not available for all quarters'], ['Universe EW CAGR', pct(cagr(u)), 'fairer yardstick (size tilt)'],
+      [`${HM.label} CAGR`, pct(cagr(r)), `${$('hl-size').selectedOptions[0].text.toLowerCase()}, equal weight, before costs`, 'primary'], ['NIFTY 50 CAGR', b ? pct(cagr(b)) : 'n/a', b ? `excess ${pct(cagr(r) - cagr(b))} p.a.` : 'benchmark not available for all quarters'], ['Universe EW CAGR', pct(cagr(u)), 'fairer yardstick (size tilt)'],
       ['Alpha (annual)', b ? pct(alpha) : '–', b ? `beta ${beta.toFixed(2)} · t-stat ${t.toFixed(1)}` : ''], ['Sharpe', sharpe.toFixed(2), `vol ${pct(vol, 0)} · rf ${pct(RF)}`], ['Max drawdown', pct(mdd), 'peak to trough, quarterly'], ['Information ratio', b ? ir.toFixed(2) : '–', b ? `excess return ÷ tracking error, vs NIFTY 50` : ''], ['Tracking error', b ? pct(te) : '–', 'annualised sd of quarterly excess return'], ['Hit rate vs NIFTY 50', b ? pct(hit, 0) : '–', `${n} quarters`],
     ].map(k => `<div class="kpi ${k[3] || ''} ${cls}"><div class="eyebrow">${k[0]}</div><div class="v">${k[1]}</div><div class="u">${esc(k[2])}</div></div>`).join('');
   }
   fetch('/apps/zenojas/backtest.json').then(r => r.json()).then(B => {
-    HB = B; const cut = B.models.bilstm.training_through || B.meta.training_through;
+    HB = B; const cut = (B.models[HEAD] || B.models.bilstm).training_through || B.meta.training_through;
     const sel = $('hl-start'); B.quarters.forEach((q, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `Scored ${new Date(q.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}${q.date <= cut ? ' · in-sample' : ''}`; sel.appendChild(o); });
     sel.value = B.quarters.findIndex(q => q.date > cut);
     ['hl-start', 'hl-n', 'hl-size'].forEach(id => $(id).addEventListener('change', renderHeadline));

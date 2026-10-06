@@ -49,7 +49,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     <header class="bx-head">
       <div class="eyebrow">Tool · ZENOJAS · Backtest Explorer</div>
       <h1>Backtest Explorer</h1>
-      <p class="lede" style="color:var(--ink-2)">Pick any run of quarters and see how the model's top-ranked portfolio compounded against the market. Quarters the model was trained on are shaded and flagged: returns there are flattered, because the model had already seen those outcomes. Every statistic is computed in your browser from the quarterly returns file.</p>
+      <p class="lede" style="color:var(--ink-2)">Pick any run of quarters and see how the model's top-ranked portfolio compounded against the market. XGBoost, the first-choice ZENOJAS model, is selected by default; the earlier BiLSTM and the other comparators are in the Model menu. Quarters the model was trained on are shaded and flagged: returns there are flattered, because the model had already seen those outcomes. Every statistic is computed in your browser from the quarterly returns file.</p>
       <ZenojasNav current="explorer" />
       <div class="zn-stamp" id="stamp" style="font-family:var(--font-mono);font-size:.85rem;color:var(--ink-3);margin-top:8px">loading backtest data…</div>
     </header>
@@ -113,11 +113,11 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
 
   function init(){
     RF=D.meta.risk_free??0.065; Q=D.quarters; byDate=Object.fromEntries(Q.map((q,i)=>[q.date,i]));
-    $('stamp').textContent=`${Q.length} scoring quarters · ${longLabel(Q[0])} → ${longLabel(Q[Q.length-1])} · BiLSTM trained through ${D.models.bilstm.training_through} · data generated ${D.meta.generated}`;
-    const mSel=$('model'); mSel.innerHTML=''; Object.entries(D.models).forEach(([k,m])=>{const o=document.createElement('option');o.value=k;o.textContent=m.label||k;mSel.appendChild(o)});
+    $('stamp').textContent=`${Q.length} scoring quarters · ${longLabel(Q[0])} → ${longLabel(Q[Q.length-1])} · default model XGBoost (first choice) · all models trained through ${(D.models.xgboost||D.models.bilstm).training_through} · data generated ${D.meta.generated}`;
+    const mSel=$('model'); mSel.innerHTML=''; const ORDER=['xgboost','lightgbm','logistic','random_forest','bilstm','momentum','random']; const keys=Object.keys(D.models).sort((a,b)=>{const ia=ORDER.indexOf(a),ib=ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)}); keys.forEach(k=>{const m=D.models[k];const o=document.createElement('option');o.value=k;o.textContent=(m.label||k)+(k==='xgboost'?' (first choice)':k==='bilstm'?' (superseded)':'');mSel.appendChild(o)}); if(D.models.xgboost)mSel.value='xgboost';
     const fSel=$('from'),tSel=$('to'); fSel.innerHTML='';tSel.innerHTML='';
     Q.forEach((q,i)=>{for(const s of [fSel,tSel]){const o=document.createElement('option');o.value=i;o.textContent=`Scored ${longLabel(q)}`;s.appendChild(o)}});
-    const firstTest=Q.findIndex(q=>q.date>D.models.bilstm.training_through);
+    const firstTest=Q.findIndex(q=>q.date>(D.models.xgboost||D.models.bilstm).training_through);
     const presets=[
       ['Whole out-of-sample record (21 q, Mar-21 → Mar-26)', firstTest, Q.length-1],
       ['Dissertation window (16 q, Mar-21 → Dec-24)', byDate['2021-03-31'], byDate['2024-12-31']],
