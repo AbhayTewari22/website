@@ -59,7 +59,44 @@ For drought the GAN prices *above* the naive benchmark, by about 16%, because it
 
 For earthquake the four methods disagree by a factor of 1.4 in rate on line. That is a statement about ten data points, not about any method.
 
-The honest summary for the dissertation's second hypothesis is narrower than the original claim. On one-dimensional severity with fewer than fifty points, the WGAN-GP is about as good as a lognormal fit at describing the body and does not by itself improve the tail. Its clear advantages appear where the problem is multivariate or conditional: spatially correlated drought, and pricing for a stated wind, magnitude or monsoon scenario. Synthetic data from WGAN-GP, combined with EVT, improves the stability and scenario-responsiveness of pricing for correlated, data-scarce perils. It is not a universal accuracy upgrade, and the tool is built so that anyone can check.
+The honest summary for the dissertation's second hypothesis is narrower than the original claim. On one-dimensional severity with fewer than fifty points, the WGAN-GP is about as good as a lognormal fit at describing the body and does not by itself improve the tail. Its clear advantages appear where the problem is multivariate or conditional: spatially correlated drought, and pricing for a stated wind, magnitude or monsoon scenario. Synthetic data from WGAN-GP, combined with EVT, improves tail accuracy and scenario-responsiveness for correlated, data-scarce perils. It does not make premiums more stable (see the bootstrap test below), it is not a universal accuracy upgrade, and the tool is built so that anyone can check.
+
+## Results reported in the dissertation (October 2026)
+
+The dissertation tests the second hypothesis with the same models and reports three things: how closely the synthetic data match the real sample, how the methods differ in the tail, and how stable the resulting premium is.
+
+**Fidelity.** Distance between 20,000 synthetic draws and the real sample (log scale; lower is better).
+
+| Peril | Real observations | KS, WGAN-GP | KS, lognormal | Wasserstein-1, WGAN-GP | Wasserstein-1, lognormal |
+|---|---:|---:|---:|---:|---:|
+| Flood | 64 | 0.054 | 0.061 | 0.065 | 0.103 |
+| Cyclone | 45 | 0.129 | 0.118 | 0.327 | 0.267 |
+| Earthquake | 10 | 0.213 | 0.210 | 0.872 | 0.525 |
+| Drought (21 sub-divisions) | 115 | 0.064 | 0.187 (independent normal) | 0.007 | 0.024 |
+
+**Tail.** Return-period cedant losses after EVT calibration (INR crore, 2024 exposure).
+
+| Peril | Method | 1-in-50 | 1-in-100 | 1-in-200 |
+|---|---|---:|---:|---:|
+| Flood | WGAN-GP + EVT | 1,440 | 1,540 | 1,612 |
+| | Lognormal | 2,219 | 2,745 | 3,350 |
+| | Empirical | 1,419 | 1,676 | 1,676 |
+| Cyclone | WGAN-GP + EVT | 2,229 | 3,002 | 3,810 |
+| | Lognormal | 3,716 | 5,752 | 8,943 |
+| | Empirical | 2,442 | 2,671 | 2,970 |
+
+The empirical record cannot exceed its largest loss, so its 1-in-100 and 1-in-200 values are capped. The flood model was trained on 1953–2016 only; the held-out years 2017–2021 fall at the 53rd, 26th, 18th, 28th and 65th percentiles of its predictive distribution, so there is no sign of bias, though five years cannot separate the methods.
+
+**Price and stability.** Technical rate on line, and the coefficient of variation of the premium across 400 bootstrap resamples of the loss history (the GPD tail re-fitted each time).
+
+| Layer (INR crore) | WGAN-GP + EVT | Lognormal | Empirical | Stability (CoV): WGAN-GP + EVT / lognormal / empirical |
+|---|---:|---:|---:|---:|
+| Flood, 500 xs 1,000 annual aggregate | 17.6% | 21.0% | 18.9% | 0.17 / 0.11 / 0.19 |
+| Cyclone, 1,000 xs 500, one reinstatement | 24.4% | 28.3% | 26.8% | 0.35 / 0.23 / 0.32 |
+| Earthquake, 1,000 xs 500 (illustrative) | 13.2% | 15.4% | 18.2% | – |
+| Drought, 1,000 xs 800 (sum insured 5,000) | 17.4% | 14.6% (independent normal) | 18.0% | – |
+
+**Verdict: mixed, and reported as such.** On accuracy the EVT-calibrated WGAN-GP is clearly better in the tail: the lognormal overstates 1-in-100 flood and cyclone losses by 70–90% and prices the layers 15–20% higher. On stability it is not better: its premium moves about as much as empirical pricing under resampling, and more than the lognormal, whose stability comes from a rigid shape that is wrong in the tail. Its clearest advantage is in drought, where it captures the correlation between regions that an independent model misses. The dissertation therefore narrows the hypothesis to tail accuracy and dependence, and drops the claim about stability and "fairness".
 
 ## Governance
 

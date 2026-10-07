@@ -109,13 +109,31 @@ import { Content as ModelCard } from '../../data/zenojas-model-card.md';
         <div><span>Sharpe / Sortino</span><b>1.90 / 5.8</b></div>
         <div><span>Max drawdown</span><b>−22.0%</b></div>
         <div><span>Beta vs NIFTY 50</span><b>1.53</b></div>
-        <div><span>Five-factor alpha</span><b>30.6% (t 2.44)</b></div>
+        <div><span>Five-factor alpha</span><b>30.6% (t 2.44; not robust)</b></div>
         <div><span>Size beta</span><b>1.25</b></div>
         <div><span>vs BiLSTM, per quarter</span><b>+5.5% (t 4.26)</b></div>
         <div><span>CAGR gap, 95% CI</span><b>14.5–45.5 pp</b></div>
         <div><span>Deflated Sharpe (15 trials)</span><b>0.994</b></div>
       </div>
       <div class="warn" style="margin-top:14px">Caveats: a walk-forward re-test (re-trained every quarter) gives about 62% a year for 2021–26, but the tabular models are statistically tied and most of the edge is 12-month momentum. The training label refers to the quarter just ended, so precision@30 overstates skill. Returns are a backtest, gross unless stated, on a survivors-only universe, so compare with the equal-weight universe rather than the NIFTY 50. The book has high beta and a strong small/mid-cap tilt (much of the return is size, not selection). Not investment advice. Full detail in the <a href="#" data-goto="card">model card</a>.</div>
+    </div>
+
+    <div class="panel" id="weighting">
+      <h2>Equal weight or maximum Sharpe?<small>walk-forward XGBoost picks, re-trained every quarter, net of 50 bp costs</small></h2>
+      <p style="font-size:.9rem;color:var(--ink-2);max-width:80ch">The same quarterly picks held two ways: in equal weight, and re-weighted each quarter to maximise the expected Sharpe ratio (Ledoit–Wolf covariance on 36 months of returns, long-only, at most 10% per stock, using only data known at the buy date). Every row covers the same holding windows, so the Nifty 500 and Smallcap 250 Total Return Indices are directly comparable.</p>
+      <div class="tablewrap" style="max-height:none"><table class="zt">
+        <thead><tr><th>Portfolio, 2021–26</th><th class="n">CAGR gross</th><th class="n">CAGR net</th><th class="n">Volatility</th><th class="n">Sharpe</th><th class="n">Sortino</th><th class="n">Max drawdown</th><th class="n">Info ratio vs EW universe</th><th class="n">Turnover / q</th></tr></thead>
+        <tbody>
+          <tr><td>Equal weight, top 10</td><td class="n">79.6%</td><td class="n">75.3%</td><td class="n">45.7%</td><td class="n">1.36</td><td class="n">5.29</td><td class="n">−25.9%</td><td class="n" data-ir="ew10">…</td><td class="n">69%</td></tr>
+          <tr><td>Equal weight, top 30</td><td class="n">61.8%</td><td class="n">58.1%</td><td class="n">32.6%</td><td class="n">1.43</td><td class="n">4.36</td><td class="n">−23.0%</td><td class="n" data-ir="ew30">…</td><td class="n">63%</td></tr>
+          <tr><td><b>Maximum Sharpe, top 30</b></td><td class="n"><b>79.5%</b></td><td class="n"><b>75.1%</b></td><td class="n">33.5%</td><td class="n"><b>1.74</b></td><td class="n"><b>6.92</b></td><td class="n"><b>−17.4%</b></td><td class="n" data-ir="b">…</td><td class="n">71%</td></tr>
+          <tr><td>Equal-weight universe</td><td class="n">25.5%</td><td class="n">25.1%</td><td class="n">22.3%</td><td class="n">0.84</td><td class="n">1.63</td><td class="n">−23.6%</td><td class="n">–</td><td class="n">9%</td></tr>
+          <tr><td>Nifty 500 TRI</td><td class="n">12.7%</td><td class="n">12.7%</td><td class="n">14.5%</td><td class="n">0.46</td><td class="n">0.76</td><td class="n">−16.0%</td><td class="n">–</td><td class="n">–</td></tr>
+          <tr><td>Nifty Smallcap 250 TRI</td><td class="n">18.0%</td><td class="n">18.0%</td><td class="n">20.4%</td><td class="n">0.61</td><td class="n">1.04</td><td class="n">−23.6%</td><td class="n">–</td><td class="n">–</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:.85rem;color:var(--ink-2);margin-top:8px">Holding windows 31 May 2021 to 31 Aug 2026 (stocks scored at quarter-end are bought two months later). Over 2012–26 the pattern holds: maximum Sharpe 66.4% net with a −19.8% drawdown, equal-weight top 30 57.0% and −23.0%, Nifty 500 TRI 14.7%, Smallcap 250 TRI 17.2%. Index TRIs carry no costs.</p>
+      <div class="warn" style="margin-top:12px">What this shows: maximum-Sharpe weighting lifts the return mainly by concentrating in the highest-ranked stocks (about 14–15 effective names), since an equal-weight top 10 earns the same. Its real contribution is risk control: lower volatility and drawdown, and the best Sharpe and Sortino ratios. With the label corrected to the holding-period return the gain shrinks to about 10 points (55.2% against 45.4% net, 2021–26). Survivors-only universe; not investment advice.</div>
     </div>
 
     <div class="warn">The portfolio, ranked universe, backtest and diagnostics tabs below come from the <b>earlier BiLSTM v1 scoring run</b> (outputs file not yet regenerated). XGBoost picks will replace them after the next scoring run; until then, read them as the superseded model's output.</div>

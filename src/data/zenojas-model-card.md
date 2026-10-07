@@ -63,6 +63,27 @@ What this shows:
 - **No skill in a crash.** Trained to June 2007 and tested over 2007–09, the models' rank IC was about zero and the portfolio tracked the universe down.
 
 
+### Equal weight against maximum-Sharpe weighting (October 2026)
+
+The walk-forward XGBoost picks were also re-weighted each quarter to maximise the expected Sharpe ratio: Ledoit–Wolf shrinkage covariance on each stock's 36 trailing monthly returns, long-only, at most 10% per stock, using only data available at the buy date. Costs are 50 bp on each side of the weight traded. All rows use the same holding windows (31 May 2021 to 31 Aug 2026), so the Nifty 500 and Nifty Smallcap 250 Total Return Indices are directly comparable.
+
+| Portfolio, 2021–26 | CAGR gross | CAGR net | Volatility | Sharpe (net) | Sortino (net) | Max drawdown (net) | Turnover / quarter |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Equal weight, top 10 | 79.6% | 75.3% | 45.7% | 1.36 | 5.29 | −25.9% | 69% |
+| Equal weight, top 15 | 76.9% | 72.7% | 44.3% | 1.35 | 5.10 | −27.2% | 69% |
+| Equal weight, top 30 | 61.8% | 58.1% | 32.6% | 1.43 | 4.36 | −23.0% | 63% |
+| Maximum Sharpe, top 30 (score-based) | 79.5% | 75.1% | 33.5% | 1.74 | 6.92 | −17.4% | 71% |
+| Maximum Sharpe, top 30 (shrunk mean) | 80.8% | 76.6% | 38.3% | 1.59 | 5.37 | −22.4% | 66% |
+| Equal-weight universe | 25.5% | 25.1% | 22.3% | 0.84 | 1.63 | −23.6% | 9% |
+| Nifty 500 TRI | 12.7% | 12.7% | 14.5% | 0.46 | 0.76 | −16.0% | – |
+| Nifty Smallcap 250 TRI | 18.0% | 18.0% | 20.4% | 0.61 | 1.04 | −23.6% | – |
+
+- **The return gain is concentration.** The optimiser ends up with about 14–15 effective names tilted to the top scores; an equal-weight top 10 earns the same net return.
+- **The real benefit is risk control.** At the same return as the top 10, maximum Sharpe has lower volatility and drawdown and the best Sharpe and Sortino ratios, in 2021–26 and 2012–26 alike (2012–26: 66.4% net, −19.8% drawdown, against 57.0% and −23.0% for equal-weight top 30).
+- **Smaller with the corrected label.** With the label defined on the holding-period return, maximum Sharpe earns 55.2% net against 45.4% for equal weight over 2021–26, and no more than equal weight over 2012–26.
+- **Benchmarks.** Over the same windows the Nifty 500 TRI returned 12.7% a year and the Nifty Smallcap 250 TRI 18.0% (11.9% and 16.3% on calendar dates 31 Mar 2021 to 30 Mar 2026). The equal-weight universe remains the fair benchmark because the universe contains survivors only.
+
+
 ### Net of costs
 
 | Model | Turnover / quarter | Gross CAGR | 50 bp per side | 100 bp per side |
