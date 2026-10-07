@@ -3,11 +3,11 @@ import Base from '../../../layouts/Base.astro';
 import ZenojasNav from '../../../components/ZenojasNav.astro';
 import { Content } from '../../../data/zenojas-playbook.md';
 ---
-<Base title="ZENOJAS Stock Model — Playbook" description="How the ZENOJAS BiLSTM stock-selection model is built, run, judged and compared against simpler models. Methodology only; no weights, data or code are published.">
+<Base title="ZENOJAS Stock Model — Playbook" description="How the ZENOJAS stock-selection model (XGBoost first choice; BiLSTM superseded) is built, run, judged and compared against simpler models. Methodology only; no weights, data or code are published.">
   <div class="article-head">
     <div class="eyebrow">Tool · ZENOJAS · Methodology</div>
     <h1>ZENOJAS Stock Model — Playbook</h1>
-    <p class="lede">The technical version: features, labelling, split, network, portfolio rule, evaluation and the protocol for comparing the network against simpler models on identical terms.</p>
+    <p class="lede">The technical version: features, labelling, split, learner, portfolio rule, evaluation, and the like-for-like comparison that made XGBoost the first-choice model ahead of the BiLSTM.</p>
     <ZenojasNav current="playbook" />
   </div>
   <article class="prose"><Content /></article>
