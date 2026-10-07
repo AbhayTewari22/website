@@ -4,7 +4,7 @@
 
 **What it does.** Each quarter the model scores every stock in a ~940-name NSE universe with the probability that it belongs to the top 200 of the universe. (The audit below found that this training label refers to the quarter just ended, not the holding quarter, so in practice the model ranks mainly on momentum.) The 30 highest-probability names form an equal-weight portfolio, rebalanced quarterly. Only the ordering of the scores matters.
 
-**Learner.** Gradient-boosted decision trees (XGBoost), deliberately shallow and heavily regularised because the training set is small for financial data and the base rate is low: maximum tree depth 3, at least 50 samples per leaf, random seed 42. No ticker embedding, so the model can score names it never saw in training (IPOs since 2020).
+**Learner.** Gradient-boosted decision trees (XGBoost), kept shallow and slow-learning because the training set is small for financial data and the base rate is low: 400 trees, maximum depth 4, learning rate 0.03, 80% row and column subsampling, random seed 42. No ticker embedding, so the model can score names it never saw in training (IPOs since 2020).
 
 **Inputs (the same 11 quarterly features as the BiLSTM v1).** Three-month price return (TMR), momentum (200-day minus 50-day moving average), beta and Jensen alpha versus the NIFTY Midcap 100, industry-relative price z-score, earnings yield (E/P), book-to-price (B/P), sales-to-price (S/P), a dividend-payer flag, debt-to-equity and EPS. These survived a VIF / correlation screen of a wider 30-ratio panel. Skewed features are power-transformed (Yeo-Johnson; Box-Cox for E/P and S/P) and standardised, with transforms fitted on the training rows only.
 
@@ -101,6 +101,21 @@ The walk-forward XGBoost picks were also re-weighted each quarter to maximise th
 ### Why not BiLSTM
 
 The BiLSTM v1 (a learned ticker embedding plus 11 features through one bidirectional LSTM layer, 2.5 M parameters, mostly the embedding) fitted history far better than it predicted the future: 129.4% CAGR and rank IC 0.246 in-sample, against 36.4% and rank IC 0.009 out-of-sample. That collapse is classic overfitting. The ticker embedding lets the network memorise which stocks did well in 2005–2020 rather than learn a relationship between features and returns; it cannot score new listings and showed negative permutation importance. Its out-of-sample portfolio return is mostly the small-cap tilt any top-30 book from this universe picked up in 2022–24. It is kept as a research branch, not as the production ranker.
+
+### How to verify (October 2026)
+
+Every number on the ZENOJAS pages can be re-computed. On 7 October 2026 the XGBoost model was refitted on the 2005–2020 training quarters and used to score every quarter from March 2021 to March 2026. That run gives a top-30 CAGR of 65.1% and a mean rank IC of 0.096. The figures quoted above and in the dissertation (64.9%, 0.097) came from the same code run on a different machine; XGBoost builds differ slightly between machines, and individual quarters move by up to 3 points.
+
+| Item | Value |
+|---|---|
+| Settings | 400 trees, max depth 4, learning rate 0.03, subsample 0.8, column sample 0.8, seed 42, 11 features |
+| Software | Python 3.11.7, xgboost 2.1.1, pandas 2.1.4, numpy 1.26.4 |
+| Input workbook | "29Sep - Supporting working file - Updated (1).xlsx", SHA-256 `d8be8ba9503349aa6cdd7560cf6ff3489acf0eab7e2d4ba11752da12b89656b4` |
+| Picks per quarter | [picks.json](/apps/zenojas/picks.json): top 60 per quarter with entry and exit prices and returns |
+| Latest scoring, backtest, diagnostics | [outputs.json](/apps/zenojas/outputs.json), SHA-256 `e28b52c9decaecdcfabdc13d094f8719a3ad9635950bc9c383e1d6cfc81a6d4d` |
+| Net quarterly returns behind the weighting table | [net_quarterly_returns.csv](/apps/zenojas/verification/net_quarterly_returns.csv) |
+
+The author also holds a verification pack: the scripts, the fitted model in XGBoost's native JSON format, the scores for all 942 stocks in every quarter (18,726 rows), the run log and a README with the three commands needed to reproduce the run, with SHA-256 checksums for every file. It is available on request. Anyone with the workbook can check a quarter by recomputing the equal-weight return of the listed picks from the entry and exit prices in picks.json.
 
 ### Caveats
 
