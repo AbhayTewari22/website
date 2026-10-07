@@ -2,7 +2,7 @@
 import Base from '../../../layouts/Base.astro';
 import ZenojasNav from '../../../components/ZenojasNav.astro';
 ---
-<Base title="ZENOJAS Predicted Stocks by Quarter" description="See exactly which stocks the earlier ZENOJAS BiLSTM model ranked highest at any quarter-end (XGBoost picks to follow after the next scoring run), the probability it assigned, the entry and exit prices over the lagged holding window, and the return each pick delivered.">
+<Base title="ZENOJAS Predicted Stocks by Quarter" description="See exactly which stocks the ZENOJAS XGBoost model ranked highest at any quarter-end (the earlier BiLSTM is kept for comparison), the probability it assigned, the entry and exit prices over the lagged holding window, and the return each pick delivered.">
   <style is:global>
     .pk { display: grid; gap: 20px; --good: var(--ok); --bad: #C0392B; --insample: #C98500; --insample-bg: rgba(201,133,0,.12); }
     :root[data-theme="dark"] .pk { --bad: #E67373; }
@@ -44,7 +44,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
       <h1>Predicted stocks by quarter</h1>
       <p class="lede" style="color:var(--ink-2)">Choose a scoring date and see the stocks the model ranked highest, the probability it assigned to each, and what each pick returned over the lagged holding window. Everything on this page comes from the model's own output files, so any quarter's portfolio can be audited stock by stock.</p>
       <ZenojasNav current="picks" />
-      <div class="status" style="margin-top:10px"><b>These picks were produced by the earlier BiLSTM v1 model</b>, which has been superseded by XGBoost as the first-choice ZENOJAS model (see the <a href="/tools/zenojas/">model card</a>). XGBoost picks will replace them after the next scoring run; no XGBoost picks are shown here until that run is published.</div>
+      <div class="status" style="margin-top:10px"><b>XGBoost is shown by default</b>: the first-choice ZENOJAS model, trained on 2005–2020 and frozen, so every quarter here is out of sample. The earlier BiLSTM v1 picks remain in the model menu for comparison. To reproduce these picks, see <a href="/tools/zenojas/">How to verify</a> in the model card.</div>
       <div class="zn-stamp" id="stamp" style="font-family:var(--font-mono);font-size:.85rem;color:var(--ink-3);margin-top:8px">loading predictions…</div>
     </header>
 
@@ -95,7 +95,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
 
     fetch('/apps/zenojas/picks.json').then(r => r.json()).then(d => {
       D = d;
-      mSel.innerHTML = Object.entries(D.models).map(([k, m]) => `<option value="${k}">${m.label}${k === 'bilstm' ? ' · earlier model, superseded by XGBoost' : ''}</option>`).join('');
+      mSel.innerHTML = Object.entries(D.models).map(([k, m]) => `<option value="${k}">${m.label}${k === 'bilstm' ? ' · earlier model, superseded by XGBoost' : ' · first choice'}</option>`).join('');
       model = mSel.value; fillQuarters(); render();
       $('#stamp').textContent = `predictions file generated ${longLabel(D.meta.generated)}`;
     }).catch(() => { $('#stamp').textContent = 'could not load predictions file'; });
@@ -111,7 +111,7 @@ import ZenojasNav from '../../../components/ZenojasNav.astro';
     }
     function render() {
       const M = D.models[model], Q = M.quarters[quarter], n = +sSel.value;
-      $('#status').textContent = `${M.label}${model === 'bilstm' ? ' (earlier model; XGBoost picks will replace these after the next scoring run)' : ''}. ${M.status} Training data runs to ${longLabel(M.training_through)}; every quarter shown here is after that date.`;
+      $('#status').textContent = `${M.label}${model === 'bilstm' ? ' (earlier model, superseded by XGBoost)' : ''}. ${M.status} Training data runs to ${longLabel(M.training_through)}; every quarter shown here is after that date.`;
       const ew = ewReturn(Q, n), have = Q.picks.slice(0, n).filter(p => p.r != null).length;
       $('#tiles').innerHTML = [
         ['primary', `Top ${n} equal-weight`, pct(ew), `${have} of ${n} with prices`],
